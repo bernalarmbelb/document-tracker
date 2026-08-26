@@ -1,0 +1,233 @@
+/* ============================================================================
+   Top Navigation — ported from the Treasury Management System nav bar.
+   Restyles document-tracker's existing top nav (formerly mis-named "#sidebar").
+   Colors/typography are hardcoded here (not CSS vars) to avoid clashing with
+   the Cork admin template variables already loaded.
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* ── Layout: header flows normally (Cork makes it position:fixed, which left a
+      gap at the very top). Branding scrolls; only the menu strip sticks. ─────── */
+.header-container.custom-css-navbar {
+	position: static !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	background: transparent;
+	display: block !important;   /* app.css set flex-direction:column + row-gap:4px, which created the gap between header and nav */
+	row-gap: 0 !important;
+	gap: 0 !important;
+	border-bottom: none !important;
+}
+.main-container.mt-5 { margin-top: 0 !important; }
+/* Cork pushes #content down 119px to clear its fixed header; our header flows,
+   so that space is now just a gap between the menu and the page content. */
+#content.main-content { margin-top: 0 !important; }
+
+/* ── Header bar ──────────────────────────────────────────────────────────── */
+.navigation-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 7px 25px;
+	border-bottom: 1px solid rgba(51, 51, 51, 0.15);
+	background: #fff;
+	font-family: 'Manrope', sans-serif;
+	color: #333;
+	gap: 16px;
+}
+
+.logo-image {
+	width: 48px;
+	height: 48px;
+	object-fit: contain;
+	flex-shrink: 0;
+}
+
+.nav-branding {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	text-decoration: none;
+	color: inherit;
+	flex-shrink: 0;
+}
+.nav-branding:hover { text-decoration: none; color: inherit; }
+
+.nav-branding-text {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	line-height: normal;
+}
+.nav-branding-sub  { font-size: 12px; font-weight: 500; color: #333; white-space: nowrap; }
+.nav-branding-name { font-size: 12px; font-weight: 800; color: #333; white-space: nowrap; }
+
+/* ── Right cluster: date/time + user ─────────────────────────────────────── */
+.nav-profile {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.nav-user {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+.nav-user-info {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+	justify-content: center;
+	line-height: 1.2;
+}
+.nav-user-name { font-size: 12.5px; font-weight: 800; color: #1f2937; white-space: nowrap; letter-spacing: 0.02em; }
+.nav-user-role { font-size: 11px; font-weight: 500; color: #6b7280; white-space: nowrap; }
+.nav-user-divider { width: 1px; height: 26px; background: rgba(51, 51, 51, 0.14); flex-shrink: 0; }
+.nav-logout-btn {
+	display: inline-flex;
+	align-items: center;
+	background: #fff;
+	border: 1px solid rgba(66, 122, 181, 0.35);
+	border-radius: 20px;
+	padding: 6px 15px;
+	font-size: 11.5px;
+	font-weight: 600;
+	color: #427ab5;
+	cursor: pointer;
+	font-family: 'Manrope', sans-serif;
+	white-space: nowrap;
+	line-height: normal;
+	text-decoration: none;
+	transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease;
+}
+.nav-logout-btn:hover { background: #427ab5; border-color: #427ab5; color: #fff; text-decoration: none; }
+
+/* ── Mobile header refinements ───────────────────────────────────────────── */
+@media (max-width: 640px) {
+	.navigation-header { padding: 6px 12px; gap: 8px; }
+	.logo-image { width: 40px; height: 40px; }
+	.nav-branding-sub { font-size: 9px; }
+	.nav-branding-name { font-size: 12px; }
+}
+
+/* ── Sticky horizontal menu strip ────────────────────────────────────────── */
+.nav-sticky-wrapper {
+	position: sticky;
+	top: 0;
+	z-index: 1000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin: 0;
+}
+
+.navigation-bar {
+	align-items: center;
+	background: #427ab5;
+	outline: 1px solid #427ab5;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: nowrap;
+	font-family: 'Manrope', sans-serif;
+	font-size: 12px;
+	font-weight: 400;
+	height: 50px;
+	min-height: 50px;
+	letter-spacing: 0.1em;
+	line-height: normal;
+	overflow-x: auto;
+	padding: 0 8px;
+	scrollbar-width: none;
+	width: 100%;
+}
+.navigation-bar::-webkit-scrollbar { display: none; }
+
+.navigation-bar a,
+.navigation-bar .nav-dropdown > .dropdown-toggle {
+	text-decoration: none;
+	color: #fff;
+	align-items: center;
+	padding: 10px;
+	display: flex;
+	height: 100%;
+	width: fit-content;
+	white-space: nowrap;
+	border-bottom: 5px solid transparent;
+	background: none;
+	border-left: none;
+	border-right: none;
+	border-top: none;
+	cursor: pointer;
+}
+.navigation-bar a:hover,
+.navigation-bar a.active,
+.navigation-bar .nav-dropdown > .dropdown-toggle:hover,
+.navigation-bar .nav-dropdown.active > .dropdown-toggle {
+	color: #b7bbc1;
+	font-weight: 400;
+	border-bottom: 5px solid #333;
+}
+
+/* menu icons */
+.navigation-bar a .nav-ico { width: 15px; height: 15px; margin-right: 7px; flex-shrink: 0; }
+
+/* dropdown submenus (Communications, User Management) */
+.navigation-bar .nav-dropdown { display: flex; height: 100%; }
+.navigation-bar .nav-dropdown > .dropdown-toggle::after {
+	margin-left: 6px;
+	vertical-align: middle;
+}
+/* Nav dropdown menus — dedicated class + !important so Cork's global
+   .dropdown-item styles cannot override them (and it travels if Popper
+   repositions the menu with strategy:fixed). */
+ul.dropdown-menu.tm-navmenu {
+	border-radius: 10px !important;
+	border: 1px solid rgba(51, 51, 51, 0.10) !important;
+	box-shadow: 0 12px 32px rgba(16, 24, 40, 0.18) !important;
+	padding: 6px !important;
+	min-width: 200px !important;
+	margin-top: 8px !important;
+	background: #fff !important;
+}
+ul.dropdown-menu.tm-navmenu .dropdown-item {
+	font-family: 'Manrope', sans-serif !important;
+	font-size: 13px !important;
+	font-weight: 500 !important;
+	color: #333 !important;
+	padding: 9px 12px !important;
+	border-radius: 6px !important;
+	background: transparent !important;
+	display: block !important;
+	width: 100% !important;
+	height: auto !important;
+	border: none !important;
+	white-space: nowrap !important;
+}
+ul.dropdown-menu.tm-navmenu .dropdown-item:hover,
+ul.dropdown-menu.tm-navmenu .dropdown-item:focus {
+	background: rgba(66, 122, 181, 0.10) !important;
+	color: #427ab5 !important;
+}
+ul.dropdown-menu.tm-navmenu .dropdown-item.active,
+ul.dropdown-menu.tm-navmenu .dropdown-item:active {
+	background: #427ab5 !important;
+	color: #fff !important;
+}
+
+/* ── Scroll buttons (appear only when the menu overflows) ────────────────── */
+.nav-scroll-btn {
+	background: #427ab5;
+	border: none;
+	color: #fff;
+	cursor: pointer;
+	font-size: 24px;
+	height: 50px;
+	padding: 0 8px;
+	z-index: 1001;
+	display: none; /* toggled by JS */
+	line-height: 1;
+}
