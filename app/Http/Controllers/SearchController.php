@@ -43,9 +43,10 @@ class SearchController extends Controller
             if (session()->has('search_communication')) $this->search_communication = session('search_communication');
             if (session()->has('search_ordinance_types')) $this->search_ordinance_types = session('search_ordinance_types');
 
-            if(Auth::user()->account_type!="ADMINISTRATOR" && Auth::user()->account_type!="SUPER ADMIN") return redirect('/dashboard');  
-            else return $next($request);          
-        });           
+            return $next($request);
+        });
+
+        $this->middleware('permission:Search Document');
     }
 
     public function global_search(Request $request)

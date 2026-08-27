@@ -13,11 +13,7 @@ class MembersController extends Controller
 
     public function __construct()
     {
-        $this->middleware(function ($request, $next) {
-            if (Auth::user()->account_type != "ADMINISTRATOR" && Auth::user()->account_type != "SUPER ADMIN")
-                return redirect('/');
-            else return $next($request);
-        });
+        $this->middleware('permission:Members');
     }
 
     public function list()

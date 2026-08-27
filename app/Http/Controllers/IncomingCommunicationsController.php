@@ -22,11 +22,11 @@ class IncomingCommunicationsController extends Controller
 
     public function __construct()
     {
-        $this->middleware(function ($request, $next) 
-        {
-            if(Auth::user()->account_type!="ADMINISTRATOR" && Auth::user()->account_type!="SUPER ADMIN") return redirect('/dashboard');  
-            else return $next($request);          
-        });       
+        $this->middleware('permission:View Communications')->only(['incoming_list', 'print_incoming', 'get_incoming_info', 'get_incoming_files', 'view']);
+        $this->middleware('permission:Add Communication')->only(['save_add_incoming', 'upload_supporting_documents_incoming']);
+        $this->middleware('permission:Edit Communication')->only(['save_changes_incoming']);
+        $this->middleware('permission:Archive Communication')->only(['move_to_archive_incoming']);
+        $this->middleware('permission:Add Communication,Edit Communication')->only(['delete_uploaded_file_incoming']);
     }
 
     public function incoming_list()

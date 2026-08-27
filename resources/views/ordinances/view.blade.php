@@ -4,6 +4,7 @@
 <link rel="stylesheet" type="text/css" href="{{ asset("assets/src/plugins/css/light/editors/quill/quill.snow.css") }}">
 <style>
     .tm-doc .ql-editor { padding: 0; }
+    .tm-doc .ql-editor p { margin: 0; }
     .tm-doc .ql-align-center img { width: 100%; }
     .tm-kv { font-size: 13px; }
     .tm-kv .r { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid var(--tm-line); }

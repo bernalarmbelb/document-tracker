@@ -25,14 +25,19 @@ class MinutesController extends Controller
     public $keyword = "";
 
     public function __construct()
-    {        
-        $this->middleware(function ($request, $next) 
+    {
+        $this->middleware(function ($request, $next)
         {
             if (session()->has('minutes_keyword')) $this->keyword = session('minutes_keyword');
 
-            if(Auth::user()->account_type!="ADMINISTRATOR" && Auth::user()->account_type!="SUPER ADMIN") return redirect('/dashboard');  
-            else return $next($request);          
-        });       
+            return $next($request);
+        });
+
+        $this->middleware('permission:View Minutes')->only(['list', 'list_grid', 'attendance_report', 'view', 'view_minute', 'generate_pdf', 'search', 'search_grid']);
+        $this->middleware('permission:Add Minute')->only(['add', 'save_add', 'upload_supporting_documents']);
+        $this->middleware('permission:Edit Minute')->only(['edit', 'save_changes']);
+        $this->middleware('permission:Archive Minute')->only(['delete', 'move_to_archive']);
+        $this->middleware('permission:Add Minute,Edit Minute')->only(['delete_uploaded_file_view']);
     }
 
     public function list()
@@ -194,13 +199,16 @@ class MinutesController extends Controller
                 $this->messages[] = array(
                         'type' => 'danger',
                         'text' => 'Error '.($this->edit?'updating':'adding').' minute.'
-                );              
+                );
                 session()->flash('messages',$this->messages);
 
+                if (isset($data['ajax'])) return response()->json(['error' => 'Error '.($this->edit?'updating':'adding').' minute.'], 422);
                 return redirect()->route('minutes.edit', ['id' => $the_id]);
         }
 
         $this->save_attendance($the_id, $data);
+
+        if (isset($data['ajax'])) return response()->json(['id' => $the_id]);
 
         $this->messages[] = array(
                 'type' => 'success',
@@ -361,6 +369,7 @@ class MinutesController extends Controller
         $mpdf->SetDefaultBodyCSS('line-height', '1');
 
         $css = file_get_contents(public_path("assets/src/plugins/css/light/editors/quill/quill.snow.css"));
+        $css .= '.ql-editor p { margin: 0; }'; // tight paragraph spacing to match on-screen view
         $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);        
 
         $minute_info = Minutes::where('id', $transid)->first();       

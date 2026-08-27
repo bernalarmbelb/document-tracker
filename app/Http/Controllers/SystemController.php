@@ -27,17 +27,24 @@ class SystemController extends Controller
 
     public function __construct()
     {
-        $this->middleware(function ($request, $next) 
+        $this->middleware(function ($request, $next)
         {
             if (session()->has('logs_selected_date_start')) $this->selected_date_start = session('logs_selected_date_start');
             if (session()->has('logs_selected_date_end')) $this->selected_date_end = session('logs_selected_date_end');
             if (session()->has('selected_user_type')) $this->selected_user_type = session('selected_user_type');
 
-            if(Auth::user()->account_type!="ADMINISTRATOR" && Auth::user()->account_type!="SUPER ADMIN") return redirect('/dashboard');  
-            else return $next($request);          
-        });    
+            return $next($request);
+        });
         $this->selected_date_start = date("Y-m-d");
-        $this->selected_date_end = date("Y-m-d");   
+        $this->selected_date_end = date("Y-m-d");
+
+        $this->middleware('permission:View Logs')->only(['logs', 'logs_filter', 'get_log_details', 'print_logs_list']);
+        $this->middleware('permission:View Users')->only(['user_list', 'get_user_info']);
+        $this->middleware('permission:Add User')->only(['save_add_user']);
+        $this->middleware('permission:Edit User')->only(['save_changes_user']);
+        $this->middleware('permission:Reset Password')->only(['reset_password']);
+        $this->middleware('permission:Archive User')->only(['move_to_archive']);
+        $this->middleware('permission:Set Access Control')->only(['access_control', 'select_access_control', 'save_access_control']);
     }
 
     public function logs()

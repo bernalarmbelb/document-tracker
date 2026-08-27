@@ -20,7 +20,7 @@
             </div>
         </div>
 
-        <form action="{{ $edit ? url('/activities/save_changes/') : url('/activities/save_add/') }}" method="post" autocomplete="off">
+        <form id="mainForm" action="{{ $edit ? url('/activities/save_changes/') : url('/activities/save_add/') }}" method="post" autocomplete="off">
             @csrf
             <input type="hidden" name="activity_id" value="{{ $info->id ?? '' }}"/>
             <div class="row g-3">
@@ -117,6 +117,9 @@
                                 </select>
                             </div>
                             <div class="col-12 d-flex gap-3">
+                                @if(!$edit)
+                                    <button type="button" id="btn-add-docs" class="tm-btn tm-btn-outline tm-btn-block" onclick="addSupportingDocsInline()">Add Supporting Documents</button>
+                                @endif
                                 <button type="submit" name="btnsaveasdraft" value="1" class="tm-btn tm-btn-outline tm-btn-block">Save</button>
                                 <button type="submit" name="btnsave" value="1" class="tm-btn tm-btn-primary tm-btn-block">Save and Return</button>
                             </div>
@@ -126,27 +129,25 @@
             </div>
         </form>
 
-        @if($edit)
-            <div class="row g-3" style="margin-top:0">
-                <div class="col-lg-6">
-                    <div class="tm-card blog-create-section">
-                        <input type="hidden" name="supporting_document_activity_id" value="{{ $info->id ?? '' }}">
-                        <label class="tm-label">Supporting Documents <small class="tm-muted">Uploads save automatically.</small></label>
-                        <div class="multiple-file-upload">
-                            <input type="file" class="filepond file-upload-multiple" id="filepond" multiple data-allow-reorder="true" data-max-file-size="3MB" data-max-files="5">
-                        </div>
-                        <ul class="list-group mt-2">
-                            @foreach($all_documents as $item)
-                                <li class="list-group-item">
-                                    <a href="{{ url('activities/delete_uploaded_file_view/'.$item->id) }}" onclick="return confirm('Are you sure you want to delete this file?')" title="Delete File" class="me-2 text-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
-                                    <a href="{{ url('uploads_sangguniang/'.$item->filename) }}" target="_blank">{{ substr($item->filename,11) }}</a>
-                                </li>
-                            @endforeach
-                        </ul>
+        <div class="row g-3" id="supporting-documents-panel" style="margin-top:0;{{ $edit ? '' : 'display:none' }}">
+            <div class="col-lg-6">
+                <div class="tm-card blog-create-section">
+                    <input type="hidden" name="supporting_document_activity_id" value="{{ $info->id ?? '' }}">
+                    <label class="tm-label">Supporting Documents <small class="tm-muted">Uploads save automatically.</small></label>
+                    <div class="multiple-file-upload">
+                        <input type="file" class="filepond file-upload-multiple" id="filepond" multiple data-allow-reorder="true" data-max-file-size="3MB" data-max-files="5">
                     </div>
+                    <ul class="list-group mt-2">
+                        @foreach($all_documents ?? [] as $item)
+                            <li class="list-group-item">
+                                <a href="{{ url('activities/delete_uploaded_file_view/'.$item->id) }}" onclick="return confirm('Are you sure you want to delete this file?')" title="Delete File" class="me-2 text-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
+                                <a href="{{ url('uploads_sangguniang/'.$item->filename) }}" target="_blank">{{ substr($item->filename,11) }}</a>
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
             </div>
-        @endif
+        </div>
 
     </div>
 </div>
@@ -193,26 +194,62 @@
         showMessages();
     };
 
-          
-        
     // Register FilePond on the input field
-    @if($edit)
+    function initFilePond(resId) {
         FilePond.create(document.getElementById('filepond'), {
             allowMultiple: true,
             storeAsFile: true,
             server: {
-                process: '{{ url("/activities/upload_supporting_documents?activity_id=$info->id") }}', 
+                process: '{{ url("/activities/upload_supporting_documents") }}?activity_id=' + resId,
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-            
             }
         });
+    }
 
-       
+    @if($edit)
+        initFilePond({{ $info->id }});
     @endif
 
-    
+    function addSupportingDocsInline() {
+        const form = document.getElementById('mainForm');
+        if (!form.reportValidity()) return;
+
+        const btn = document.getElementById('btn-add-docs');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const formData = new FormData(form);
+        formData.append('ajax', '1');
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(async (r) => {
+            const body = await r.json();
+            if (!r.ok) throw new Error(body.error || 'Something went wrong.');
+            return body;
+        })
+        .then((body) => {
+            document.querySelector('input[name="activity_id"]').value = body.id;
+            form.action = '{{ url('/activities/save_changes/') }}';
+            btn.style.display = 'none';
+
+            const panel = document.getElementById('supporting-documents-panel');
+            panel.style.display = '';
+            document.querySelector('#supporting-documents-panel input[name="supporting_document_activity_id"]').value = body.id;
+
+            initFilePond(body.id);
+        })
+        .catch((err) => {
+            btn.disabled = false;
+            btn.textContent = 'Add Supporting Documents';
+            Swal.fire('Error', err.message, 'error');
+        });
+    }
 
 </script>
 @endsection

@@ -22,11 +22,11 @@ class OutgoingCommunicationsController extends Controller
 
     public function __construct()
     {
-        $this->middleware(function ($request, $next) 
-        {
-            if(Auth::user()->account_type!="ADMINISTRATOR" && Auth::user()->account_type!="SUPER ADMIN") return redirect('/dashboard');  
-            else return $next($request);          
-        });       
+        $this->middleware('permission:View Communications')->only(['outgoing_list', 'print_outgoing', 'get_outgoing_info', 'get_outgoing_files']);
+        $this->middleware('permission:Add Communication')->only(['save_add_outgoing', 'upload_supporting_documents_outgoing']);
+        $this->middleware('permission:Edit Communication')->only(['save_changes_outgoing']);
+        $this->middleware('permission:Archive Communication')->only(['move_to_archive_outgoing']);
+        $this->middleware('permission:Add Communication,Edit Communication')->only(['delete_uploaded_file_outgoing']);
     }
 
     public function outgoing_list()

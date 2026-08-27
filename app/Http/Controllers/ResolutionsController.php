@@ -33,13 +33,18 @@ class ResolutionsController extends Controller
 
     public function __construct()
     {
-        $this->middleware(function ($request, $next) 
+        $this->middleware(function ($request, $next)
         {
             if (session()->has('resolutions_selected_status')) $this->selected_status = session('resolutions_selected_status');
 
-            if(Auth::user()->account_type!="ADMINISTRATOR" && Auth::user()->account_type!="SUPER ADMIN") return redirect('/dashboard');  
-            else return $next($request);          
-        });       
+            return $next($request);
+        });
+
+        $this->middleware('permission:View Resolutions')->only(['list', 'list_filter', 'view', 'view_resolution', 'generate_pdf', 'print_list', 'get_uploaded_files']);
+        $this->middleware('permission:Add Resolution')->only(['add', 'save_add', 'upload_supporting_documents', 'upload_supporting_documents_single']);
+        $this->middleware('permission:Edit Resolution')->only(['edit', 'save_changes']);
+        $this->middleware('permission:Archive Resolution')->only(['delete', 'move_to_archive']);
+        $this->middleware('permission:Add Resolution,Edit Resolution')->only(['delete_uploaded_file', 'delete_uploaded_file_view']);
     }
 
     public function list()
@@ -248,12 +253,15 @@ class ResolutionsController extends Controller
                 $this->messages[] = array(
                         'type' => 'danger',
                         'text' => 'Error '.($this->edit?'updating':'adding').' resolution.'
-                );              
+                );
                 session()->flash('messages',$this->messages);
 
-                return redirect()->route('resolutions.edit', ['id' => $the_id]);                      
+                if (isset($data['ajax'])) return response()->json(['error' => 'Error '.($this->edit?'updating':'adding').' resolution.'], 422);
+                return redirect()->route('resolutions.edit', ['id' => $the_id]);
         }
-        
+
+        if (isset($data['ajax'])) return response()->json(['id' => $the_id]);
+
         $this->messages[] = array(
                 'type' => 'success',
                 'text' => 'Resolution '.($this->edit ? 'updated':'added').' successfully.'
@@ -447,6 +455,7 @@ class ResolutionsController extends Controller
         $mpdf->SetDefaultBodyCSS('line-height', '1');
 
         $css = file_get_contents(public_path("assets/src/plugins/css/light/editors/quill/quill.snow.css"));
+        $css .= '.ql-editor p { margin: 0; }'; // tight paragraph spacing to match on-screen view
         $mpdf->WriteHTML($css, \Mpdf\HTMLParserMode::HEADER_CSS);
 
         $resolution_info = Resolutions::where('id', $transid)->first();  

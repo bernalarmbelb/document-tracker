@@ -30,12 +30,11 @@ class SangguniangActivitiesController extends Controller
 
     public function __construct()
     {
-        $this->middleware(function ($request, $next) 
-        {           
-
-            if(Auth::user()->account_type!="ADMINISTRATOR" && Auth::user()->account_type!="SUPER ADMIN") return redirect('/dashboard');  
-            else return $next($request);          
-        });       
+        $this->middleware('permission:View Activities')->only(['all', 'upcoming', 'ongoing', 'completed', 'view', 'view_activity', 'print_list']);
+        $this->middleware('permission:Add Activity')->only(['add', 'save_add', 'upload_supporting_documents']);
+        $this->middleware('permission:Edit Activity')->only(['edit', 'save_changes']);
+        $this->middleware('permission:Archive Activity')->only(['move_to_archive']);
+        $this->middleware('permission:Add Activity,Edit Activity')->only(['delete_uploaded_file_view']);
     }
 
     public function all()
@@ -155,12 +154,15 @@ class SangguniangActivitiesController extends Controller
                 $this->messages[] = array(
                         'type' => 'danger',
                         'text' => 'Error '.($this->edit?'updating':'adding').' activity.'
-                );              
+                );
                 session()->flash('messages',$this->messages);
 
-                return redirect()->route('activities.edit', ['id' => $the_id]);                      
+                if (isset($data['ajax'])) return response()->json(['error' => 'Error '.($this->edit?'updating':'adding').' activity.'], 422);
+                return redirect()->route('activities.edit', ['id' => $the_id]);
         }
-        
+
+        if (isset($data['ajax'])) return response()->json(['id' => $the_id]);
+
         $this->messages[] = array(
                 'type' => 'success',
                 'text' => 'Activity '.($this->edit ? 'updated':'added').' successfully.'

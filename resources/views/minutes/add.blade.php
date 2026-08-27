@@ -5,13 +5,14 @@
 <link rel="stylesheet" href="{{ asset("assets/src/plugins/src/filepond/FilePondPluginImagePreview.min.css") }}">
 <link rel="stylesheet" href="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.css") }}">
 <link href="{{ asset("assets/src/plugins/css/light/sweetalerts2/custom-sweetalert.css") }}" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" type="text/css" href="{{ asset("assets/src/plugins/src/editors/summernote/summernote-lite.min.css") }}">
+{{-- quill.snow.css kept so legacy (Quill-authored) alignment/indent classes still render inside the editor --}}
 <link rel="stylesheet" type="text/css" href="{{ asset("assets/src/plugins/css/light/editors/quill/quill.snow.css") }}">
 
 <style>
     .hidden { display: none; }
-    .ql-toolbar.ql-snow, .ql-container.ql-snow { border-color: rgba(51,51,51,.15) !important; }
-    .ql-toolbar.ql-snow { border-radius: 8px 8px 0 0; }
-    .ql-container.ql-snow { border-radius: 0 0 8px 8px; font-family: var(--tm-font); }
+    .note-editor.note-frame { border-radius: 8px; border-color: rgba(51,51,51,.15); }
+    .note-editor .note-editing-area .note-editable { font-family: var(--tm-font); }
     .att-opt { display:inline-block; margin-left:10px; font-size:12px; color:var(--tm-muted); cursor:pointer; }
     .att-opt input { vertical-align:middle; }
 </style>
@@ -33,7 +34,7 @@
             {{-- Left: form --}}
             <div class="col-lg-6">
                 <div class="tm-card">
-                    <form class="row g-3" action="{{ $edit ? url('/minutes/save_changes/') : url('/minutes/save_add/') }}" method="post" autocomplete="off">
+                    <form class="row g-3" id="mainForm" action="{{ $edit ? url('/minutes/save_changes/') : url('/minutes/save_add/') }}" method="post" autocomplete="off">
                         @csrf
                         <input type="hidden" name="minute_id" value="{{ $info->id ?? '' }}"/>
                         <input type="hidden" name="editor_content" id="quill-content">
@@ -117,31 +118,32 @@
                         </div>
 
                         <div class="col-12 d-flex gap-3">
+                            @if(!$edit)
+                                <button type="button" id="btn-add-docs" class="tm-btn tm-btn-outline tm-btn-block" onclick="addSupportingDocsInline()">Add Supporting Documents</button>
+                            @endif
                             <button type="submit" name="btnsaveasdraft" value="1" class="tm-btn tm-btn-outline tm-btn-block">Save</button>
                             <button type="submit" name="btnsave" value="1" class="tm-btn tm-btn-primary tm-btn-block">Save and Return</button>
                         </div>
                     </form>
 
-                    @if($edit)
-                        <div class="blog-create-section" style="margin-top:20px;border-top:1px solid var(--tm-line);padding-top:16px">
-                            <form action="{{ url('/minutes/upload_supporting_documents/') }}" method="post" autocomplete="off" enctype="multipart/form-data">
-                                @csrf
-                                <input type="hidden" name="supporting_document_minute_id" value="{{ $info->id ?? '' }}">
-                                <label class="tm-label">Supporting Documents <small class="tm-muted">Uploads save automatically.</small></label>
-                                <div class="multiple-file-upload">
-                                    <input type="file" class="filepond file-upload-multiple" name="files[]" id="filepond" multiple data-allow-reorder="true" data-max-file-size="3MB" data-max-files="5">
-                                </div>
-                            </form>
-                            <ul class="list-group mt-2">
-                                @foreach($all_documents as $item)
-                                    <li class="list-group-item">
-                                        <a href="{{ url('minutes/delete_uploaded_file_view/'.$item->id) }}" onclick="return confirm('Are you sure you want to delete this file?')" title="Delete File" class="me-2 text-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
-                                        <a href="{{ url('uploads_minutes/'.$item->filename) }}" target="_blank">{{ substr($item->filename,11) }}</a>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        </div>
-                    @endif
+                    <div class="blog-create-section" id="supporting-documents-panel" style="margin-top:20px;border-top:1px solid var(--tm-line);padding-top:16px;{{ $edit ? '' : 'display:none' }}">
+                        <form action="{{ url('/minutes/upload_supporting_documents/') }}" method="post" autocomplete="off" enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" name="supporting_document_minute_id" value="{{ $info->id ?? '' }}">
+                            <label class="tm-label">Supporting Documents <small class="tm-muted">Uploads save automatically.</small></label>
+                            <div class="multiple-file-upload">
+                                <input type="file" class="filepond file-upload-multiple" name="files[]" id="filepond" multiple data-allow-reorder="true" data-max-file-size="3MB" data-max-files="5">
+                            </div>
+                        </form>
+                        <ul class="list-group mt-2">
+                            @foreach($all_documents ?? [] as $item)
+                                <li class="list-group-item">
+                                    <a href="{{ url('minutes/delete_uploaded_file_view/'.$item->id) }}" onclick="return confirm('Are you sure you want to delete this file?')" title="Delete File" class="me-2 text-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
+                                    <a href="{{ url('uploads_minutes/'.$item->filename) }}" target="_blank">{{ substr($item->filename,11) }}</a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 </div>
             </div>
 
@@ -149,23 +151,27 @@
             <div class="col-lg-6">
                 <div class="tm-card">
                     <h3>Document Content</h3>
-                    <div id="editor-container" style="height: 500px;">
-                        <p class="ql-align-center">Republic of the Philippines</p>
-                        <p class="ql-align-center">Province of Sorsogon</p>
-                        <p class="ql-align-center"><strong>MUNICIPALITY OF PRIETO DIAZ</strong></p>
-                        <p class="ql-align-center">LGU TIN:000794065</p>
-                        <p class="ql-align-center">Official Email Address: sbprietodiaz@gmail.com</p>
-                        <br/><br/><br/>
+                    <div id="editor-container">
+                        @if($edit)
+                            {!! $info->editor_content !!}
+                        @else
+                        <p style="text-align:center;">Republic of the Philippines</p>
+                        <p style="text-align:center;">Province of Sorsogon</p>
+                        <p style="text-align:center;"><strong>MUNICIPALITY OF PRIETO DIAZ</strong></p>
+                        <p style="text-align:center;">LGU TIN:000794065</p>
+                        <p style="text-align:center;">Official Email Address: sbprietodiaz@gmail.com</p>
+                        <p><br></p>
                         <p><strong>BARANGAY SAN ISIDRO</strong></p>
                         <p>January 01, 2025</p>
                         <p>Barangay San Isidro, Function Hall</p>
                         <p>03:00PM-04:00PM</p>
-                        <br/>
+                        <p><br></p>
                         <p><strong>I. HEADING 1</strong></p>
                         <p>Details here...</p>
-                        <br/>
+                        <p><br></p>
                         <p><strong>II. HEADING 2</strong></p>
                         <p>Details here...</p>
+                        @endif
                     </div>
                 </div>
 
@@ -183,7 +189,7 @@
 @endsection
 
 @section("additional_footer")
-<script src="{{ asset("assets/src/plugins/src/editors/quill/quill.js") }}"></script>
+<script src="{{ asset("assets/src/plugins/src/editors/summernote/summernote-lite.min.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/filepond/filepond.min.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/filepond/FilePondPluginFileValidateType.min.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/filepond/FilePondPluginImageExifOrientation.min.js") }}"></script>
@@ -192,10 +198,8 @@
 <script src="{{ asset("assets/src/plugins/src/filepond/FilePondPluginImageResize.min.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/filepond/FilePondPluginImageTransform.min.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/filepond/filepondPluginFileValidateSize.min.js") }}"></script>
-<script src="{{ asset("assets/src/assets/js/apps/blog-create.js") }}"></script>
 
 <script src="{{ asset("assets/src/assets/js/scrollspyNav.js") }}"></script>
-<script src="{{ asset("assets/src/plugins/src/editors/quill/quill.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.min.js") }}"></script>
 <script src="{{ asset("js/app.js") }}"></script>
 <script>
@@ -235,57 +239,96 @@
         }
     });
 
-    const toolbarOptions = [
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-        ['blockquote', 'code-block'],
-        ['link', 'image'],
-
-        [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-        [{ 'list': 'ordered'}, { 'list': 'bullet' }, { 'list': 'check' }],
-        [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-        [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-
-        [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-
-        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-        [{ 'font': [] }],
-        [{ 'align': [] }],
-
-        ['clean']                                         // remove formatting button
-        ];
-
-        var quill = new Quill('#editor-container', {
-        modules: {
-            toolbar: toolbarOptions
-        },
-            placeholder: 'Compose an article...',
-            theme: 'snow'  // or 'bubble'
+        $('#editor-container').summernote({
+            height: 500,
+            fontNames: ['Manrope', 'Arial', 'Times New Roman', 'Georgia', 'Courier New', 'Verdana', 'Tahoma'],
+            fontNamesIgnoreCheck: ['Manrope'],
+            fontSizes: ['8', '9', '10', '11', '12', '14', '16', '18', '24', '36'],
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'italic', 'underline', 'strikethrough', 'clear']],
+                ['fontname', ['fontname']],
+                ['fontsize', ['fontsize']],
+                ['color', ['color']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['table', ['table']],
+                ['insert', ['link', 'picture', 'hr']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
         });
 
-        @if($edit)
-            quill.root.innerHTML = `{!! $info->editor_content !!}`;
-        @endif
-
-        document.querySelector("form").onsubmit = function() {
-            document.querySelector("#quill-content").value = quill.root.innerHTML;
+        document.querySelector("#mainForm").onsubmit = function() {
+            document.querySelector("#quill-content").value = $('#editor-container').summernote('code');
         };
 
-        
+    // Register FilePond plugins here (blog-create.js used to do this, but it was a
+    // demo script referencing elements that don't exist on this page).
+    if (window.FilePond) {
+        FilePond.registerPlugin(
+            FilePondPluginImagePreview,
+            FilePondPluginImageExifOrientation,
+            FilePondPluginFileValidateSize
+        );
+    }
+
     // Register FilePond on the input field
-    @if($edit)
+    function initFilePond(resId) {
         FilePond.create(document.getElementById('filepond'), {
             allowMultiple: true,
             storeAsFile: true,
             server: {
-                process: '{{ url("/minutes/upload_supporting_documents?minute_id=$info->id") }}', 
+                process: '{{ url("/minutes/upload_supporting_documents") }}?minute_id=' + resId,
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
-            
             }
         });
+    }
+
+    @if($edit)
+        initFilePond({{ $info->id }});
     @endif
+
+    function addSupportingDocsInline() {
+        const form = document.getElementById('mainForm');
+        if (!form.reportValidity()) return;
+
+        document.querySelector("#quill-content").value = $('#editor-container').summernote('code');
+
+        const btn = document.getElementById('btn-add-docs');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        const formData = new FormData(form);
+        formData.append('ajax', '1');
+
+        fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: { 'Accept': 'application/json' }
+        })
+        .then(async (r) => {
+            const body = await r.json();
+            if (!r.ok) throw new Error(body.error || 'Something went wrong.');
+            return body;
+        })
+        .then((body) => {
+            document.querySelector('input[name="minute_id"]').value = body.id;
+            form.action = '{{ url('/minutes/save_changes/') }}';
+            btn.style.display = 'none';
+
+            const panel = document.getElementById('supporting-documents-panel');
+            panel.style.display = 'block';
+            document.querySelector('#supporting-documents-panel input[name="supporting_document_minute_id"]').value = body.id;
+
+            initFilePond(body.id);
+        })
+        .catch((err) => {
+            btn.disabled = false;
+            btn.textContent = 'Add Supporting Documents';
+            Swal.fire('Error', err.message, 'error');
+        });
+    }
 
     (function () {
         const total = {{ count($all_members) }};
