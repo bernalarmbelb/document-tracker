@@ -293,9 +293,8 @@ class SangguniangActivitiesController extends Controller
         if ($request->hasFile('filepond')) {
             $file = $request->file('filepond');
             $filename = time() . '-' . $file->getClientOriginalName();
-            //$path = $file->storeAs('uploads_resolutions', $filename, 'public');
-            $file->move(public_path('uploads_sangguniang'), $filename);
-            $path = public_path('uploads_sangguniang').'/'.$filename;
+            upload_disk()->putFileAs('uploads_sangguniang', $file, $filename);
+            $path = upload_url('uploads_sangguniang', $filename);
             $data = [                            
                 'filename'=> $filename,
                 'activity_id' => $request->activity_id,
@@ -320,8 +319,7 @@ class SangguniangActivitiesController extends Controller
         if ($request->hasFile('myfile')) {
             $file = $request->file('myfile');
             $filename = time() . '-' . $file->getClientOriginalName();
-            //$path = $file->storeAs('uploads_resolutions', $filename, 'public');
-            $file->move(public_path('uploads_sangguniang'), $filename);
+            upload_disk()->putFileAs('uploads_sangguniang', $file, $filename);
     
             $data = [                            
                 'filename'=> $filename,
@@ -401,8 +399,9 @@ class SangguniangActivitiesController extends Controller
     {          
         $data = $request->all();                
         $records = SangguniangDocuments::where("resolution_id", $data['resolution_id'])->where('is_deleted', 0)->get();
+        $records->each(fn ($r) => $r->url = upload_url('uploads_sangguniang', $r->filename));
 
-        $rows = array(                         
+        $rows = array(
             'rows' => $records,
         );
         echo json_encode($rows);

@@ -187,8 +187,7 @@ class OutgoingCommunicationsController extends Controller
         if ($request->hasFile('myfile')) {
             $file = $request->file('myfile');
             $filename = time() . '-' . $file->getClientOriginalName();
-            //$path = $file->storeAs('uploads_communications', $filename, 'public');
-            $file->move(public_path('uploads_communications'), $filename);
+            upload_disk()->putFileAs('uploads_communications', $file, $filename);
     
             $data = [                            
                 'filename'=> $filename,
@@ -210,8 +209,9 @@ class OutgoingCommunicationsController extends Controller
     {          
         $data = $request->all();                
         $records = CommunicationsDocuments::where("communication_id", $data['communication_id'])->where('is_deleted', 0)->get();
+        $records->each(fn ($r) => $r->url = upload_url('uploads_communications', $r->filename));
 
-        $rows = array(                         
+        $rows = array(
             'rows' => $records,
         );
         echo json_encode($rows);

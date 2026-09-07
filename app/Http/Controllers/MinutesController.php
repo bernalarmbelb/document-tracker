@@ -328,9 +328,8 @@ class MinutesController extends Controller
         if ($request->hasFile('filepond')) {
             $file = $request->file('filepond');
             $filename = time(). '-' . $file->getClientOriginalName();
-            //$path = $file->storeAs('uploads_minutes', $filename, 'public');
-            $file->move(public_path('uploads_minutes'), $filename);
-            $path = public_path('uploads_minutes').'/'.$filename;
+            upload_disk()->putFileAs('uploads_minutes', $file, $filename);
+            $path = upload_url('uploads_minutes', $filename);
     
             $data = [                            
                 'filename'=> $filename,
@@ -411,18 +410,20 @@ class MinutesController extends Controller
         $all_attachments = MinutesDocuments::where("minute_id", $transid)->where('is_deleted', 0)->orderBy('updated_at','asc')->get();
         foreach ($all_attachments as $item)
         {
-            $images[] = public_path('uploads_minutes/'.$item->filename);
+            $images[] = upload_local_copy('uploads_minutes', $item->filename);
         }
 
         foreach ($images as $image) {
-            if (file_exists($image)) {
+            if ($image && file_exists($image)) {
                 $mpdf->AddPage(); // create new page for each image
-                
+
                 $mpdf->WriteHTML("
                     <div style='text-align:center;'>
                         <img src='{$image}' style='width:100%; height:auto;'>
                     </div>
                 ");
+
+                @unlink($image);
             }
         }
 

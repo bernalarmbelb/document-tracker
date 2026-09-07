@@ -42,7 +42,7 @@
                             <td>{{ $item->position }}</td>
                             <td>
                                 @if($item->esignature<>"")
-                                    <a href="javascript:void(0);" onclick='view_esignature(@json($item->esignature))' style="color:var(--tm-primary);text-decoration:none">View</a>
+                                    <a href="javascript:void(0);" onclick='view_esignature(@json(upload_url("uploads_signatures", $item->esignature)))' style="color:var(--tm-primary);text-decoration:none">View</a>
                                 @else
                                     <span class="tm-muted">None</span>
                                 @endif
@@ -278,8 +278,8 @@
         });
     })();
 
-    function view_esignature(filename) {
-        document.getElementById('esig-img').src = "{{ url('uploads_signatures') }}/" + encodeURIComponent(filename);
+    function view_esignature(url) {
+        document.getElementById('esig-img').src = url;
         bootstrap.Modal.getOrCreateInstance(document.getElementById('view-esignature')).show();
     }
     // Extra deterrent: block right-click / drag anywhere inside the preview

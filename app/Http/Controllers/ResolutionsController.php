@@ -29,6 +29,7 @@ class ResolutionsController extends Controller
     public $edit = FALSE;
     public $messages = array();
     public $selected_status = "ALL";
+    private $pendingSignatureTempFiles = [];
 
 
     public function __construct()
@@ -159,29 +160,29 @@ class ResolutionsController extends Controller
 
         if($attested && $attested->esignature!='')
         {
-            $imgurl = "<img src='".url('uploads_signatures/'.$attested->esignature)."' style='height: 50px' /> <br/>";
+            $imgurl = "<img src='".upload_url('uploads_signatures', $attested->esignature)."' style='height: 50px' /> <br/>";
             $editor_content = str_replace("[attested_by]", $imgurl.$info->attested_by, $editor_content);
         }
-        else 
+        else
             $editor_content = str_replace("[attested_by]", $info->attested_by, $editor_content);
 
         if($recorded && $recorded->esignature!='')
         {
-            $imgurl = "<img src='".url('uploads_signatures/'.$recorded->esignature)."' style='height: 50px' /> <br/>";
+            $imgurl = "<img src='".upload_url('uploads_signatures', $recorded->esignature)."' style='height: 50px' /> <br/>";
             $editor_content = str_replace("[recorded_by]", $imgurl.$info->recorded_by, $editor_content);
         }
-        else 
+        else
             $editor_content = str_replace("[recorded_by]", $info->recorded_by, $editor_content);
 
         // if($approved->esignature!='')
         // {
-        //     $imgurl = "<img src='".url('uploads_signatures/'.$approved->esignature)."' style='height: 50px' /> <br/>";
+        //     $imgurl = "<img src='".upload_url('uploads_signatures', $approved->esignature)."' style='height: 50px' /> <br/>";
         //     $editor_content = str_replace("[approved_by]", $imgurl.$info->approved_by, $editor_content);
         // }
 
         if ($approved && !empty($approved->esignature))
         {
-            $imgurl = "<img src='".url('uploads_signatures/'.$approved->esignature)."' style='height: 50px' /> <br/>";
+            $imgurl = "<img src='".upload_url('uploads_signatures', $approved->esignature)."' style='height: 50px' /> <br/>";
             $editor_content = str_replace("[approved_by]", $imgurl.$info->approved_by, $editor_content);
         }
 
@@ -199,30 +200,40 @@ class ResolutionsController extends Controller
         $recorded = Signatories::where("signatory_name", $info->recorded_by)->first();
         $approved = Signatories::where("signatory_name", $info->approved_by)->first();
 
+        $signatureTempFiles = [];
+
         if($attested && $attested->esignature!='')
         {
-            $imgurl = "<img src='".public_path('uploads_signatures/'.$attested->esignature)."' style='height: 50px' /> <br/>";
+            $tmp = upload_local_copy('uploads_signatures', $attested->esignature);
+            $signatureTempFiles[] = $tmp;
+            $imgurl = "<img src='".$tmp."' style='height: 50px' /> <br/>";
             $editor_content = str_replace("[attested_by]", $imgurl.$info->attested_by, $editor_content);
         }
-        else 
+        else
             $editor_content = str_replace("[attested_by]", $info->attested_by, $editor_content);
 
         if($recorded && $recorded->esignature!='')
         {
-            $imgurl = "<img src='".public_path('uploads_signatures/'.$recorded->esignature)."' style='height: 50px' /> <br/>";
+            $tmp = upload_local_copy('uploads_signatures', $recorded->esignature);
+            $signatureTempFiles[] = $tmp;
+            $imgurl = "<img src='".$tmp."' style='height: 50px' /> <br/>";
             $editor_content = str_replace("[recorded_by]", $imgurl.$info->recorded_by, $editor_content);
         }
-        else 
+        else
             $editor_content = str_replace("[recorded_by]", $info->recorded_by, $editor_content);
 
         // if($approved->esignature!='')
         if ($approved && !empty($approved->esignature))
         {
-            $imgurl = "<img src='".public_path('uploads_signatures/'.$approved->esignature)."' style='height: 50px' /> <br/>";
+            $tmp = upload_local_copy('uploads_signatures', $approved->esignature);
+            $signatureTempFiles[] = $tmp;
+            $imgurl = "<img src='".$tmp."' style='height: 50px' /> <br/>";
             $editor_content = str_replace("[approved_by]", $imgurl.$info->approved_by, $editor_content);
         }
-        else 
+        else
             $editor_content = str_replace("[approved_by]", $info->approved_by, $editor_content);
+
+        $this->pendingSignatureTempFiles = array_filter($signatureTempFiles);
 
         return $editor_content;
     }
@@ -389,9 +400,8 @@ class ResolutionsController extends Controller
         if ($request->hasFile('filepond')) {
             $file = $request->file('filepond');
             $filename = time() . '-' . $file->getClientOriginalName();
-            //$path = $file->storeAs('uploads_resolutions', $filename, 'public');
-            $file->move(public_path('uploads_resolutions'), $filename);
-            $path = public_path('uploads_resolutions').'/'.$filename;
+            upload_disk()->putFileAs('uploads_resolutions', $file, $filename);
+            $path = upload_url('uploads_resolutions', $filename);
             $data = [                            
                 'filename'=> $filename,
                 'resolution_id' => $request->resolution_id,
@@ -412,8 +422,7 @@ class ResolutionsController extends Controller
         if ($request->hasFile('myfile')) {
             $file = $request->file('myfile');
             $filename = time() . '-' . $file->getClientOriginalName();
-            //$path = $file->storeAs('uploads_resolutions', $filename, 'public');
-            $file->move(public_path('uploads_resolutions'), $filename);
+            upload_disk()->putFileAs('uploads_resolutions', $file, $filename);
     
             $data = [                            
                 'filename'=> $filename,
@@ -470,25 +479,33 @@ class ResolutionsController extends Controller
         else 
           $html = "<h2>File not found.</h2>";    
         
-        $mpdf->WriteHTML($html);       
+        $mpdf->WriteHTML($html);
+
+        // esignature images have now been embedded into the PDF; the local temp copies can go
+        foreach ($this->pendingSignatureTempFiles as $tmp) {
+            @unlink($tmp);
+        }
+        $this->pendingSignatureTempFiles = [];
 
         // ADD ATTACHEMENTS
         $images = array();
         $all_attachments = ResolutionsDocuments::where("resolution_id", $transid)->where('is_deleted', 0)->orderBy('updated_at','asc')->get();
         foreach ($all_attachments as $item)
         {
-            $images[] = public_path('uploads_resolutions/'.$item->filename);
+            $images[] = upload_local_copy('uploads_resolutions', $item->filename);
         }
 
         foreach ($images as $image) {
-            if (file_exists($image)) {
+            if ($image && file_exists($image)) {
                 $mpdf->AddPage(); // create new page for each image
-                
+
                 $mpdf->WriteHTML("
                     <div style='text-align:center;'>
                         <img src='{$image}' style='width:100%; height:auto;'>
                     </div>
                 ");
+
+                @unlink($image);
             }
         }
 
@@ -558,8 +575,9 @@ class ResolutionsController extends Controller
     {          
         $data = $request->all();                
         $records = ResolutionsDocuments::where("resolution_id", $data['resolution_id'])->where('is_deleted', 0)->get();
+        $records->each(fn ($r) => $r->url = upload_url('uploads_resolutions', $r->filename));
 
-        $rows = array(                         
+        $rows = array(
             'rows' => $records,
         );
         echo json_encode($rows);
