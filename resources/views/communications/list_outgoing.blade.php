@@ -54,6 +54,7 @@
                             <td>{{ $item->released_by }}</td>
                             <td class="tm-actions-cell">
                                 <ul class="tm-actions">
+                                    <li><a href="{{ url("communications/view/".$item->id) }}" class="bs-tooltip text-primary" data-bs-toggle="tooltip" data-bs-placement="top" title="View"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye p-1 br-8 mb-1 text-primary"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg></a></li>
                                     @if(Auth::user()->hasPermission('Edit Communication'))
                                         <li><a href="javascript:void(0);" onclick="view_details('{{ $item->id }}')" data-bs-toggle="modal" data-bs-target="#edit-communication" class="bs-tooltip text-success" data-bs-placement="top" title="Edit"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-2 p-1 br-8 mb-1 text-success"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></a></li>
                                     @endif
@@ -76,6 +77,7 @@
 
 {{-- Row click context menu --}}
 <div id="tm-row-menu" class="tm-row-menu">
+    <a data-act="view"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg> View</a>
     @if(Auth::user()->hasPermission('Edit Communication'))
         <a data-act="edit"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg> Edit</a>
     @endif
@@ -217,6 +219,7 @@
         if (!menu) return;
         var curId = null, curTitle = '';
         var archiveBase = "{{ url('communications/move_to_archive_outgoing') }}";
+        var viewBase = "{{ url('communications/view') }}";
 
         function hideMenu() { menu.style.display = 'none'; }
 
@@ -237,7 +240,8 @@
         $(menu).on('click', '[data-act]', function () {
             var act = this.getAttribute('data-act');
             hideMenu();
-            if (act === 'edit')        { view_details(curId); bootstrap.Modal.getOrCreateInstance(document.getElementById('edit-communication')).show(); }
+            if (act === 'view')        { window.location.href = viewBase + '/' + curId; }
+            else if (act === 'edit')   { view_details(curId); bootstrap.Modal.getOrCreateInstance(document.getElementById('edit-communication')).show(); }
             else if (act === 'adddoc') { view_files(curId, curTitle); bootstrap.Modal.getOrCreateInstance(document.getElementById('add-supporting-documents')).show(); }
             else if (act === 'archive') confirm_archive(archiveBase + '/' + curId);
         });
