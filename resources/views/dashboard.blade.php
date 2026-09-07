@@ -7,6 +7,11 @@
     #documents-table tbody tr { cursor: pointer; }
     #trend, #bytype, #status { min-height: 230px; }
     .tm-dash { padding: 8px; }
+    /* Dashboard needs room for a third (calendar) column — widen past the
+       default 1320px content width used by other pages. */
+    .tm-wrap.tm-dash { max-width: 1680px; }
+    .tm-grid-main { grid-template-columns: 1fr 360px 320px; }
+    @media (max-width: 1100px) { .tm-grid-main { grid-template-columns: 1fr; } }
     .tm-charts-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .tm-insights { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 6px; }
     .tm-insights .ins { border: 1px solid var(--tm-line); border-radius: 10px; padding: 12px 14px; }
@@ -16,6 +21,50 @@
     @media (max-width: 700px) { .tm-charts-2, .tm-insights { grid-template-columns: 1fr; } }
     /* keep DataTables from fighting the .tm-table borders */
     #documents-table.tm-table { width: 100% !important; }
+
+    /* Calendar of Events widget */
+    .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .cal-nav .mo { font-family: var(--tm-font-head); font-weight: 700; font-size: 13px; color: #1a1919; }
+    .cal-nav button {
+        width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--tm-line); background: transparent;
+        color: var(--tm-muted); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+        font-family: var(--tm-font); line-height: 1; padding: 0;
+    }
+    .cal-nav button:hover { background: rgba(66, 122, 181, 0.10); color: var(--tm-primary); }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .cal-dow { text-align: center; font-size: 9.5px; font-weight: 700; letter-spacing: .03em; color: var(--tm-muted); text-transform: uppercase; padding-bottom: 4px; }
+    .cal-day {
+        aspect-ratio: 1; display: flex; align-items: center; justify-content: center; position: relative;
+        font-size: 11.5px; font-weight: 600; color: #1a1919; border-radius: 8px;
+    }
+    .cal-day.out { color: var(--tm-muted); opacity: .38; font-weight: 500; }
+    .cal-day.has-event.past::after { content: ""; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--tm-muted); opacity: .7; }
+    .cal-day.has-event.upcoming { background: rgba(66, 122, 181, 0.14); color: var(--tm-primary); font-weight: 800; cursor: pointer; }
+    .cal-day.has-event.upcoming::after { content: ""; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 50%; background: var(--tm-primary); }
+    .cal-day.has-event.past { cursor: pointer; }
+    .cal-day.today { box-shadow: inset 0 0 0 1.5px #B8860B; }
+    .cal-legend { display: flex; gap: 14px; margin: 12px 0 4px; padding-top: 12px; border-top: 1px solid var(--tm-line); font-size: 10.5px; color: var(--tm-muted); font-weight: 600; }
+    .cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+    .cal-legend i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .cal-eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--tm-primary); margin: 14px 0 8px; }
+    .cal-eyebrow.muted { color: var(--tm-muted); }
+    .cal-spot, .cal-list .row {
+        display: flex; gap: 12px; padding: 10px; border-radius: 10px; cursor: pointer;
+    }
+    .cal-spot { background: rgba(66, 122, 181, 0.08); margin-bottom: 4px; }
+    .cal-list { display: flex; flex-direction: column; }
+    .cal-list .row { padding: 8px 2px; border-bottom: 1px solid var(--tm-line); border-radius: 0; }
+    .cal-list .row:last-child { border-bottom: none; }
+    .cal-list .row:hover, .cal-spot:hover { background: rgba(66, 122, 181, 0.06); }
+    .cal-chip { width: 42px; height: 42px; border-radius: 9px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--tm-primary); color: #fff; }
+    .cal-chip.done { background: var(--tm-line); color: var(--tm-muted); }
+    .cal-chip .d { font-family: var(--tm-font-head); font-weight: 800; font-size: 16px; line-height: 1; }
+    .cal-chip .m { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; opacity: .85; margin-top: 1px; }
+    .cal-body { min-width: 0; flex: 1; }
+    .cal-row-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+    .cal-name { font-size: 13px; font-weight: 700; color: #1a1919; }
+    .cal-meta { font-size: 11px; color: var(--tm-muted); margin-top: 2px; font-weight: 600; }
+    .tm-badge-acc { background: rgba(214, 170, 20, 0.16); color: #B8860B; }
 </style>
 @endsection
 
@@ -115,6 +164,28 @@
                             <div class="tm-table-empty">No activity yet.</div>
                         @endforelse
                     </div>
+                </div>
+            </div>
+
+            {{-- Far right: calendar of events, its own column --}}
+            <div class="tm-stack">
+                <div class="tm-card" id="tm-cal-card" data-view-base="{{ url('/activities/view') }}">
+                    <h3>Calendar of Events</h3>
+                    <div class="cal-nav">
+                        <button type="button" id="cal-prev" aria-label="Previous month">‹</button>
+                        <div class="mo" id="cal-mo-label"></div>
+                        <button type="button" id="cal-next" aria-label="Next month">›</button>
+                    </div>
+                    <div class="cal-grid">
+                        <div class="cal-dow">S</div><div class="cal-dow">M</div><div class="cal-dow">T</div>
+                        <div class="cal-dow">W</div><div class="cal-dow">T</div><div class="cal-dow">F</div><div class="cal-dow">S</div>
+                    </div>
+                    <div class="cal-grid" id="cal-days"></div>
+                    <div class="cal-legend">
+                        <span><i style="background:var(--tm-primary)"></i>Upcoming</span>
+                        <span><i style="background:var(--tm-muted);opacity:.5"></i>Past</span>
+                    </div>
+                    <div id="cal-agenda"></div>
                 </div>
             </div>
 
@@ -236,13 +307,15 @@
         const font = 'Manrope, sans-serif';
         const primary = '#427AB5', secondary = '#406AAF', accent = '#F7DD7D', dark = '#333', success = '#0FA958', warning = '#E84E46';
 
-        new ApexCharts(document.querySelector('#trend'), {
+        const trendChart = new ApexCharts(document.querySelector('#trend'), {
             chart: { type: 'bar', height: 230, fontFamily: font, toolbar: { show: false } },
             series: [{ name: 'Documents', data: @json($monthly_counts) }],
             xaxis: { categories: @json($monthly_labels) },
             colors: [primary], plotOptions: { bar: { borderRadius: 5, columnWidth: '55%' } },
             dataLabels: { enabled: false }, grid: { borderColor: 'rgba(51,51,51,.08)' }
-        }).render();
+        });
+        trendChart.render();
+        window.__tmTrendChart = trendChart;
 
         new ApexCharts(document.querySelector('#bytype'), {
             chart: { type: 'donut', height: 230, fontFamily: font },
@@ -284,20 +357,179 @@
             document.querySelector('#top_authors').innerHTML = '<div class="tm-table-empty">No author data yet.</div>';
         }
 
-        // Cap the Activity feed so the sidebar bottom aligns with the charts column.
-        function alignActivityFeed() {
-            const left = document.getElementById('tm-leftcol');
-            const qa   = document.getElementById('tm-qa');
-            const feed = document.getElementById('tm-activity-feed');
-            if (!left || !qa || !feed) return;
-            const card = feed.closest('.tm-card');
-            feed.style.maxHeight = '0px';               // measure fixed chrome
-            const chrome = card.offsetHeight;
-            const target = left.offsetHeight - qa.offsetHeight - 16 /*stack gap*/ - chrome;
-            feed.style.maxHeight = Math.max(target, 160) + 'px';
+    })();
+</script>
+<script>
+    // Calendar of Events — renders a mini month calendar plus an agenda list from
+    // Sangguniang Activities. "Upcoming" vs "Past" is computed from activity_date
+    // rather than trusting the stored status field, so a stale UPCOMING flag on a
+    // date that has already passed doesn't misplace it in the calendar.
+    (function () {
+        const calCard = document.getElementById('tm-cal-card');
+        if (!calCard) return;
+
+        const events = @json($calendar_activities);
+
+        const viewBase = calCard.dataset.viewBase;
+        const monthLabelEl = document.getElementById('cal-mo-label');
+        const daysEl = document.getElementById('cal-days');
+        const agendaEl = document.getElementById('cal-agenda');
+        const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+        const now = new Date();
+        const todayKey = dateKey(now.getFullYear(), now.getMonth(), now.getDate());
+
+        events.forEach(e => { e._d = e.activity_date ? new Date(e.activity_date.replace(' ', 'T')) : null; });
+        const upcoming = events.filter(e => e._d && e._d >= now).sort((a, b) => a._d - b._d);
+        const past = events.filter(e => e._d && e._d < now).sort((a, b) => b._d - a._d);
+
+        // Default the visible month to the soonest upcoming activity, else today.
+        let viewYear = now.getFullYear();
+        let viewMonth = now.getMonth();
+        if (upcoming.length) { viewYear = upcoming[0]._d.getFullYear(); viewMonth = upcoming[0]._d.getMonth(); }
+
+        function dateKey(y, m, d) { return y + '-' + m + '-' + d; }
+
+        function badgeClass(status) {
+            const s = (status || '').toUpperCase();
+            if (s === 'COMPLETED') return 'tm-badge-ok';
+            if (s === 'ONGOING') return 'tm-badge-acc';
+            if (s === 'UPCOMING') return 'tm-badge-info';
+            return 'tm-badge';
         }
-        window.addEventListener('load', () => setTimeout(alignActivityFeed, 300));
-        window.addEventListener('resize', alignActivityFeed);
+
+        function goToActivity(id) { window.location.href = viewBase + '/' + id; }
+
+        function renderCalendar() {
+            monthLabelEl.textContent = monthNames[viewMonth] + ' ' + viewYear;
+
+            const eventsByDay = {};
+            events.forEach(e => {
+                if (!e._d) return;
+                const k = dateKey(e._d.getFullYear(), e._d.getMonth(), e._d.getDate());
+                (eventsByDay[k] = eventsByDay[k] || []).push(e);
+            });
+
+            const firstDow = new Date(viewYear, viewMonth, 1).getDay();
+            const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+            const prevMonthDays = new Date(viewYear, viewMonth, 0).getDate();
+
+            let html = '';
+            for (let i = firstDow - 1; i >= 0; i--) {
+                html += '<div class="cal-day out">' + (prevMonthDays - i) + '</div>';
+            }
+            for (let d = 1; d <= daysInMonth; d++) {
+                const k = dateKey(viewYear, viewMonth, d);
+                const dayEvents = eventsByDay[k];
+                let cls = 'cal-day';
+                if (k === todayKey) cls += ' today';
+                if (dayEvents && dayEvents.length) {
+                    cls += ' has-event ' + (dayEvents[0]._d >= now ? 'upcoming' : 'past');
+                }
+                const clickAttr = (dayEvents && dayEvents.length === 1) ? ' data-id="' + dayEvents[0].id + '"' : '';
+                const titleAttr = dayEvents ? ' title="' + dayEvents.map(e => e.activity_title).join(', ').replace(/"/g, '&quot;') + '"' : '';
+                html += '<div class="' + cls + '"' + clickAttr + titleAttr + '>' + d + '</div>';
+            }
+            const trailing = (7 - ((firstDow + daysInMonth) % 7)) % 7;
+            for (let d = 1; d <= trailing; d++) {
+                html += '<div class="cal-day out">' + d + '</div>';
+            }
+            daysEl.innerHTML = html;
+
+            daysEl.querySelectorAll('.cal-day[data-id]').forEach(el => {
+                el.addEventListener('click', () => goToActivity(el.dataset.id));
+            });
+        }
+
+        function chip(e, done) {
+            const m = e._d.toLocaleString('en-US', { month: 'short' });
+            return '<div class="cal-chip' + (done ? ' done' : '') + '"><div class="d">' + e._d.getDate() + '</div><div class="m">' + m + '</div></div>';
+        }
+
+        function row(e, done, spot) {
+            const meta = [e.location, e.duration].filter(Boolean).join(' · ');
+            return (
+                '<div class="' + (spot ? 'cal-spot' : 'row') + '" data-id="' + e.id + '">' +
+                    chip(e, done) +
+                    '<div class="cal-body">' +
+                        '<div class="cal-row-top"><div class="cal-name">' + escapeHtml(e.activity_title) + '</div>' +
+                        '<span class="tm-badge ' + badgeClass(e.status) + '">' + escapeHtml(e.status || '—') + '</span></div>' +
+                        (meta ? '<div class="cal-meta">' + escapeHtml(meta) + '</div>' : '') +
+                    '</div>' +
+                '</div>'
+            );
+        }
+
+        function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+        function renderAgenda() {
+            let html = '';
+            html += '<div class="cal-eyebrow">Next up</div>';
+            html += upcoming.length
+                ? row(upcoming[0], false, true)
+                : '<div class="tm-table-empty">No upcoming activities scheduled.</div>';
+
+            if (past.length) {
+                html += '<div class="cal-eyebrow muted">Recent</div>';
+                html += '<div class="cal-list">' + past.slice(0, 4).map(e => row(e, true, false)).join('') + '</div>';
+            }
+            agendaEl.innerHTML = html;
+            agendaEl.querySelectorAll('[data-id]').forEach(el => {
+                el.addEventListener('click', () => goToActivity(el.dataset.id));
+            });
+        }
+
+        document.getElementById('cal-prev').addEventListener('click', () => {
+            viewMonth--; if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+            renderCalendar();
+            alignDashboardColumns();
+        });
+        document.getElementById('cal-next').addEventListener('click', () => {
+            viewMonth++; if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+            renderCalendar();
+            alignDashboardColumns();
+        });
+
+        renderCalendar();
+        renderAgenda();
+
+        // Even out the three dashboard columns so their cards bottom out at the
+        // same line: grow the trend chart to fill the left column's shortfall
+        // (real chart content, not blank space), and pad the calendar card's
+        // bottom to fill its shortfall (its grid can't stretch on its own since
+        // the number of week-rows varies month to month).
+        const trendBaseHeight = 230;
+        function alignDashboardColumns() {
+            const left = document.getElementById('tm-leftcol');
+            const qa = document.getElementById('tm-qa');
+            if (!left || !qa || !calCard) return;
+            const midStack = qa.closest('.tm-stack');
+            const rightStack = calCard.closest('.tm-stack');
+
+            calCard.style.paddingBottom = '';
+            if (window.__tmTrendChart) window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight } }, false, false);
+
+            requestAnimationFrame(() => {
+                const target = Math.max(left.offsetHeight, midStack.offsetHeight, rightStack.offsetHeight);
+
+                const leftShort = target - left.offsetHeight;
+                if (leftShort > 4 && window.__tmTrendChart) {
+                    window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight + leftShort } }, false, false);
+                }
+
+                const rightShort = target - rightStack.offsetHeight;
+                if (rightShort > 4) {
+                    calCard.style.paddingBottom = (20 + rightShort) + 'px';
+                }
+            });
+        }
+
+        window.addEventListener('load', () => setTimeout(alignDashboardColumns, 300));
+        let alignResizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(alignResizeTimer);
+            alignResizeTimer = setTimeout(alignDashboardColumns, 150);
+        });
     })();
 </script>
 @endsection

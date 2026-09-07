@@ -86,6 +86,13 @@ class LoginController extends Controller
         $communications_ctr = Communications::where(['is_deleted' => 0])->count();
         $activities_ctr     = SangguniangActivities::where(['is_deleted' => 0])->count();
 
+        // Calendar of Events widget — small dataset, fetch once and let the client
+        // bucket by date (avoids relying on the manually-set `status` column, which
+        // can go stale once an activity's date has passed).
+        $calendar_activities = SangguniangActivities::where(['is_deleted' => 0, 'is_archived' => 0])
+            ->orderBy('activity_date', 'asc')
+            ->get(['id', 'activity_title', 'activity_date', 'status', 'location', 'duration']);
+
         // Documents created per month, for the most recent year that has data
         // (falls back to the current year when there are no documents yet).
         $latestResYear = Resolutions::where('is_deleted', 0)->max(DB::raw('YEAR(date_created)'));
@@ -149,6 +156,7 @@ class LoginController extends Controller
             'minutes_ctr' => $minutes_ctr,
             'communications_ctr' => $communications_ctr,
             'activities_ctr' => $activities_ctr,
+            'calendar_activities' => $calendar_activities,
             'monthly_labels' => $monthly_labels,
             'monthly_counts' => $monthly_counts,
             'trend_year' => $trend_year,
