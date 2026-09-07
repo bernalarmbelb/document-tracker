@@ -471,7 +471,7 @@
 
             if (past.length) {
                 html += '<div class="cal-eyebrow muted">Recent</div>';
-                html += '<div class="cal-list">' + past.slice(0, 4).map(e => row(e, true, false)).join('') + '</div>';
+                html += '<div class="cal-list">' + past.slice(0, 2).map(e => row(e, true, false)).join('') + '</div>';
             }
             agendaEl.innerHTML = html;
             agendaEl.querySelectorAll('[data-id]').forEach(el => {
@@ -508,6 +508,9 @@
 
             calCard.style.paddingBottom = '';
             if (window.__tmTrendChart) window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight } }, false, false);
+
+            // Below 1100px the columns stack into one, so there's nothing to even out.
+            if (window.innerWidth <= 1100) return;
 
             requestAnimationFrame(() => {
                 const target = Math.max(left.offsetHeight, midStack.offsetHeight, rightStack.offsetHeight);
