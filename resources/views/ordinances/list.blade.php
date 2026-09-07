@@ -246,7 +246,7 @@
                     const li = document.createElement('li');
                     li.classList.add('list-group-item'); li.classList.add('ps-1');
                     const a = document.createElement('a');
-                    a.href = item.url;
+                    a.href = "{{ url('uploads_ordinances') }}/" + item.filename;
                     a.textContent = item.filename; a.target = '_blank'; a.title = "View File";
                     const b = document.createElement('a');
                     b.classList.add('me-2'); b.classList.add('text-danger');

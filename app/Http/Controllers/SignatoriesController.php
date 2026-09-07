@@ -117,7 +117,8 @@ class SignatoriesController extends Controller
         if ($request->hasFile('myfile')) {
             $file = $request->file('myfile');
             $filename = time() . '-' . $file->getClientOriginalName();
-            upload_disk()->putFileAs('uploads_signatures', $file, $filename);
+            //$path = $file->storeAs('uploads_resolutions', $filename, 'public');
+            $file->move(public_path('uploads_signatures'), $filename);
       
             Signatories::where(['signatory_name' => $request->signatory_id])
                 ->update([                                                                                                   

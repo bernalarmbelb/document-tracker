@@ -306,8 +306,9 @@ class OrdinancesController extends Controller
         if ($request->hasFile('filepond')) {
             $file = $request->file('filepond');
             $filename = time() . '-' . $file->getClientOriginalName();
-            upload_disk()->putFileAs('uploads_ordinances', $file, $filename);
-            $path = upload_url('uploads_ordinances', $filename);
+            //$path = $file->storeAs('uploads_ordinances', $filename, 'public');
+            $file->move(public_path('uploads_ordinances'), $filename);
+            $path = public_path('uploads_ordinances').'/'.$filename;
     
             $data = [                            
                 'filename'=> $filename,
@@ -330,7 +331,8 @@ class OrdinancesController extends Controller
         if ($request->hasFile('myfile')) {
             $file = $request->file('myfile');
             $filename = time() . '-' . $file->getClientOriginalName();
-            upload_disk()->putFileAs('uploads_ordinances', $file, $filename);
+            //$path = $file->storeAs('uploads_ordinances', $filename, 'public');
+            $file->move(public_path('uploads_ordinances'), $filename);
     
             $data = [                            
                 'filename'=> $filename,
@@ -391,20 +393,18 @@ class OrdinancesController extends Controller
         $all_attachments = OrdinancesDocuments::where("ordinance_id", $transid)->where('is_deleted', 0)->orderBy('updated_at','asc')->get();
         foreach ($all_attachments as $item)
         {
-            $images[] = upload_local_copy('uploads_ordinances', $item->filename);
+            $images[] = public_path('uploads_ordinances/'.$item->filename);
         }
 
         foreach ($images as $image) {
-            if ($image && file_exists($image)) {
+            if (file_exists($image)) {
                 $mpdf->AddPage(); // create new page for each image
-
+                
                 $mpdf->WriteHTML("
                     <div style='text-align:center;'>
                         <img src='{$image}' style='width:100%; height:auto;'>
                     </div>
                 ");
-
-                @unlink($image);
             }
         }
 
@@ -473,9 +473,8 @@ class OrdinancesController extends Controller
     {          
         $data = $request->all();                
         $records = OrdinancesDocuments::where("ordinance_id", $data['ordinance_id'])->where('is_deleted', 0)->get();
-        $records->each(fn ($r) => $r->url = upload_url('uploads_ordinances', $r->filename));
 
-        $rows = array(
+        $rows = array(                         
             'rows' => $records,
         );
         echo json_encode($rows);

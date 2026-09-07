@@ -45,12 +45,12 @@
                                     $videoExtensions = ['mp4', 'mov', 'avi', 'wmv', 'mkv'];
                                 @endphp
                                 @if(in_array($extension, $videoExtensions))
-                                    <a href="{{ upload_url('uploads_sangguniang', $item->filename) }}" class="defaultGlightbox glightbox-content">
+                                    <a href="{{ url('uploads_sangguniang/'.$item->filename) }}" class="defaultGlightbox glightbox-content">
                                         <img src="{{ url('uploads_sangguniang/video-thumbnail.png') }}" alt="video">
                                     </a>
                                 @else
-                                    <a href="{{ upload_url('uploads_sangguniang', $item->filename) }}" class="defaultGlightbox glightbox-content">
-                                        <img src="{{ upload_url('uploads_sangguniang', $item->filename) }}" alt="image">
+                                    <a href="{{ url('uploads_sangguniang/'.$item->filename) }}" class="defaultGlightbox glightbox-content">
+                                        <img src="{{ url('uploads_sangguniang/'.$item->filename) }}" alt="image">
                                     </a>
                                 @endif
                             @endforeach

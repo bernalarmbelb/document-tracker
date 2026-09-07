@@ -261,7 +261,7 @@ window.onload = function() {
                         li.classList.add('ps-1');
 
                         const a = document.createElement('a');
-                        a.href = item.url;
+                        a.href = "{{ url('uploads_communications') }}/" + item.filename;
                         a.textContent = item.filename;
                         a.target = '_blank';
                         a.title = "View File";
