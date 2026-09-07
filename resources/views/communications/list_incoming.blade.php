@@ -6,6 +6,7 @@
 <link href="{{ asset("assets/src/plugins/css/light/sweetalerts2/custom-sweetalert.css") }}" rel="stylesheet" type="text/css" />
 <link href="{{ asset("assets/src/assets/css/light/components/modal.css") }}" rel="stylesheet" type="text/css" />
 <link href="{{ asset("assets/src/assets/css/light/components/tabs.css") }}" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="{{ asset("assets/src/plugins/src/filepond/filepond.min.css") }}">
 <style>
     #zero-config.tm-table td, #zero-config.tm-table th { white-space: nowrap; }
     #zero-config.tm-table td.tm-wrap-cell { white-space: normal; min-width: 220px; }
@@ -178,11 +179,7 @@
                     <h6 class='text-primary mb-2' id='h6_add_supporting_document'></h6>
                     <div class="widget-content widget-content-area blog-create-section mb-3">
                         <div class="m-3">
-                            <form action="{{ url('/communications/upload_supporting_documents_incoming/') }}" method="post" autocomplete="off" enctype="multipart/form-data">
-                                @csrf
-                                <input type="hidden" id="supporting_document_communication_id" name="communication_id" value="">
-                                <input type="file" name="myfile" onchange="this.form.submit()">
-                            </form>
+                            <input type="file" class="filepond" id="filepond-incoming" name="myfile" multiple>
                         </div>
                     </div>
                     <ul id="my_files" class="list-group mt-2"></ul>
@@ -195,6 +192,7 @@
 @section("additional_footer")
 <script src="{{ asset("assets/src/plugins/src/table/datatable/datatables.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.min.js") }}"></script>
+<script src="{{ asset("assets/src/plugins/src/filepond/filepond.min.js") }}"></script>
 <script src="{{ asset("js/app.js") }}"></script>
 
 <script>
@@ -280,9 +278,7 @@
         });
     }
 
-    function view_files(param, paramparticulars) {
-        document.getElementById('supporting_document_communication_id').value = param;
-        document.getElementById('h6_add_supporting_document').innerHTML = paramparticulars;
+    function refreshUploadedFilesIncoming(param) {
         $.ajax({
             type: 'POST', data: { communication_id: param }, dataType: "json",
             url: '{{ url("communications/get_incoming_files") }}',
@@ -307,6 +303,36 @@
             },
             error: function (XHR, textStatus, errorThrown) { console.log(errorThrown); console.log(XHR.responseText); }
         });
+    }
+
+    let filepondIncoming = null;
+
+    function initFilePondIncoming(resId) {
+        const input = document.getElementById('filepond-incoming');
+        if (filepondIncoming) {
+            filepondIncoming.destroy();
+        }
+        filepondIncoming = FilePond.create(input, {
+            allowMultiple: true,
+            storeAsFile: true,
+            server: {
+                process: '{{ url("/communications/upload_supporting_documents_incoming") }}?communication_id=' + resId,
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+            },
+            onprocessfile: function (error, file) {
+                if (!error) {
+                    refreshUploadedFilesIncoming(resId);
+                }
+            }
+        });
+    }
+
+    function view_files(param, paramparticulars) {
+        document.getElementById('h6_add_supporting_document').innerHTML = paramparticulars;
+        refreshUploadedFilesIncoming(param);
+        initFilePondIncoming(param);
     }
 </script>
 @endsection

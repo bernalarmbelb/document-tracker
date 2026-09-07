@@ -194,16 +194,13 @@ class OutgoingCommunicationsController extends Controller
                 'filename'=> $filename,
                 'communication_id' => $request->communication_id,
             ];
-            CommunicationsDocuments::create($data);       
-            log_activity('Add Supporting Documents - Communications', json_encode($data));   
+            CommunicationsDocuments::create($data);
+            log_activity('Add Supporting Documents - Communications', json_encode($data));
 
-            $this->messages[] = array(
-                    'type' => 'success',
-                    'text' => 'Successfully added supporting document.'
-            );              
-            session()->flash('messages',$this->messages);
-            return redirect()->route('communications.outgoing_list');           
-        }       
+            return response($filename, 200);
+        }
+
+        return response('No file uploaded.', 422);
     }
 
     public function get_outgoing_files(Request $request)
