@@ -62,9 +62,10 @@
     .cal-chip .m { font-size: 8.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; opacity: .85; margin-top: 1px; }
     .cal-body { min-width: 0; flex: 1; }
     .cal-row-top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
-    .cal-name { font-size: 13px; font-weight: 700; color: #1a1919; }
+    .cal-name { font-size: 13px; font-weight: 700; color: #1a1919; flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cal-meta { font-size: 11px; color: var(--tm-muted); margin-top: 2px; font-weight: 600; }
     .tm-badge-acc { background: rgba(214, 170, 20, 0.16); color: #B8860B; }
+    .cal-row-top .tm-badge { flex-shrink: 0; }
 </style>
 @endsection
 
@@ -448,11 +449,12 @@
 
         function row(e, done, spot) {
             const meta = [e.location, e.duration].filter(Boolean).join(' · ');
+            const title = escapeHtml(e.activity_title || '');
             return (
                 '<div class="' + (spot ? 'cal-spot' : 'row') + '" data-id="' + e.id + '">' +
                     chip(e, done) +
                     '<div class="cal-body">' +
-                        '<div class="cal-row-top"><div class="cal-name">' + escapeHtml(e.activity_title) + '</div>' +
+                        '<div class="cal-row-top"><div class="cal-name" title="' + title + '">' + title + '</div>' +
                         '<span class="tm-badge ' + badgeClass(e.status) + '">' + escapeHtml(e.status || '—') + '</span></div>' +
                         (meta ? '<div class="cal-meta">' + escapeHtml(meta) + '</div>' : '') +
                     '</div>' +
@@ -493,36 +495,39 @@
         renderCalendar();
         renderAgenda();
 
-        // Even out the three dashboard columns so their cards bottom out at the
-        // same line: grow the trend chart to fill the left column's shortfall
-        // (real chart content, not blank space), and pad the calendar card's
-        // bottom to fill its shortfall (its grid can't stretch on its own since
-        // the number of week-rows varies month to month).
+        // Even out the dashboard columns: grow the trend chart to fill the left
+        // column's shortfall against the (deterministic) Quick Actions + Activity
+        // History stack — real chart content, not blank space. Separately, clamp
+        // the calendar card's agenda list to whatever's left of the Activity
+        // History card's own height, so a long title or a busy activities table
+        // can't balloon the calendar past a normal card size — it scrolls
+        // internally instead.
         const trendBaseHeight = 230;
         function alignDashboardColumns() {
             const left = document.getElementById('tm-leftcol');
             const qa = document.getElementById('tm-qa');
             if (!left || !qa || !calCard) return;
             const midStack = qa.closest('.tm-stack');
-            const rightStack = calCard.closest('.tm-stack');
+            const historyCard = document.getElementById('tm-activity-feed').closest('.tm-card');
 
-            calCard.style.paddingBottom = '';
+            agendaEl.style.maxHeight = '';
+            agendaEl.style.overflowY = '';
             if (window.__tmTrendChart) window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight } }, false, false);
 
-            // Below 1100px the columns stack into one, so there's nothing to even out.
-            if (window.innerWidth <= 1100) return;
-
             requestAnimationFrame(() => {
-                const target = Math.max(left.offsetHeight, midStack.offsetHeight, rightStack.offsetHeight);
-
-                const leftShort = target - left.offsetHeight;
-                if (leftShort > 4 && window.__tmTrendChart) {
-                    window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight + leftShort } }, false, false);
+                // Below 1100px the columns stack into one — just clamp, don't stretch.
+                if (window.innerWidth > 1100) {
+                    const leftShort = midStack.offsetHeight - left.offsetHeight;
+                    if (leftShort > 4 && window.__tmTrendChart) {
+                        window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight + leftShort } }, false, false);
+                    }
                 }
 
-                const rightShort = target - rightStack.offsetHeight;
-                if (rightShort > 4) {
-                    calCard.style.paddingBottom = (20 + rightShort) + 'px';
+                const chrome = calCard.offsetHeight - agendaEl.offsetHeight; // nav + grid + legend + card padding
+                const budget = historyCard.offsetHeight - chrome;
+                if (budget > 40 && agendaEl.scrollHeight > budget) {
+                    agendaEl.style.maxHeight = budget + 'px';
+                    agendaEl.style.overflowY = 'auto';
                 }
             });
         }
