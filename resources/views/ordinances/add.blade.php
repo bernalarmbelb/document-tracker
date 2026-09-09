@@ -130,15 +130,18 @@
                             @csrf
                             <input type="hidden" name="supporting_document_ordinance_id" value="{{ $info->id ?? '' }}">
                             <label class="tm-label">Supporting Documents <small class="tm-muted">Uploads save automatically.</small></label>
-                            <div class="multiple-file-upload">
+                            <div class="multiple-file-upload tm-upload-inline">
                                 <input type="file" class="filepond file-upload-multiple" name="filepond" id="filepond" multiple data-allow-reorder="true" data-max-file-size="100MB" data-max-files="5">
                             </div>
                         </form>
-                        <ul class="list-group mt-2" id="supporting-documents-list">
+                        <ul class="tm-doclist mt-2" id="supporting-documents-list">
                             @foreach($all_documents ?? [] as $item)
-                                <li class="list-group-item">
-                                    <a href="{{ url('ordinances/delete_uploaded_file_view/'.$item->id) }}" onclick="return confirm('Are you sure you want to delete this file?')" title="Delete File" class="me-2 text-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
+                                <li>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--tm-muted);flex-shrink:0"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                                     <a href="{{ url('uploads_ordinances/'.$item->filename) }}" target="_blank">{{ substr($item->filename,11) }}</a>
+                                    <a href="{{ url('ordinances/delete_uploaded_file_view/'.$item->id) }}" onclick="return confirm('Are you sure you want to delete this file?')" title="Delete File" class="tm-doc-del">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                    </a>
                                 </li>
                             @endforeach
                         </ul>
@@ -259,6 +262,25 @@
         FilePond.create(document.getElementById('filepond'), {
             allowMultiple: true,
             storeAsFile: true,
+            credits: false,
+            labelIdle: `
+                <div class="tm-upload-drop">
+                    <div class="tm-upload-drop-ico">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="11" x2="12" y2="17"></line>
+                            <line x1="9" y1="14" x2="15" y2="14"></line>
+                        </svg>
+                    </div>
+                    <p class="tm-upload-drop-desc">Add PDF, Word, Excel, or image files for this record.</p>
+                    <span class="filepond--label-action tm-upload-drop-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Add files
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </span>
+                </div>
+            `,
             server: {
                 process: '{{ url("/ordinances/upload_supporting_documents") }}?ordinance_id=' + resId,
                 headers: {
@@ -284,24 +306,31 @@
                 ul.innerHTML = '';
                 (data['rows'] || []).forEach(item => {
                     const li = document.createElement('li');
-                    li.classList.add('list-group-item');
 
-                    const del = document.createElement('a');
-                    del.href = "{{ url('ordinances/delete_uploaded_file_view') }}/" + item.id;
-                    del.title = 'Delete File';
-                    del.classList.add('me-2', 'text-danger');
-                    del.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
-                    del.onclick = function (event) {
-                        if (!confirm('Are you sure you want to delete this file?')) event.preventDefault();
-                    };
+                    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                    icon.setAttribute('width', '16'); icon.setAttribute('height', '16'); icon.setAttribute('viewBox', '0 0 24 24');
+                    icon.setAttribute('fill', 'none'); icon.setAttribute('stroke', 'currentColor'); icon.setAttribute('stroke-width', '2');
+                    icon.setAttribute('stroke-linecap', 'round'); icon.setAttribute('stroke-linejoin', 'round');
+                    icon.style.color = 'var(--tm-muted)'; icon.style.flexShrink = '0';
+                    icon.innerHTML = '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>';
 
                     const view = document.createElement('a');
                     view.href = "{{ url('uploads_ordinances') }}/" + item.filename;
                     view.target = '_blank';
                     view.textContent = item.filename.substring(11);
 
-                    li.appendChild(del);
+                    const del = document.createElement('a');
+                    del.href = "{{ url('ordinances/delete_uploaded_file_view') }}/" + item.id;
+                    del.title = 'Delete File';
+                    del.classList.add('tm-doc-del');
+                    del.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
+                    del.onclick = function (event) {
+                        if (!confirm('Are you sure you want to delete this file?')) event.preventDefault();
+                    };
+
+                    li.appendChild(icon);
                     li.appendChild(view);
+                    li.appendChild(del);
                     ul.appendChild(li);
                 });
             }

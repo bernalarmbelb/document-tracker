@@ -10,11 +10,6 @@
 
 <link href="{{ asset("assets/src/assets/css/light/components/modal.css") }}" rel="stylesheet" type="text/css" />
 <link rel="stylesheet" type="text/css" href="{{ asset("assets/css/app.css") }}">
-<style>
-  
-
-   
-</style>
 @endsection
 
 @section("content")
@@ -22,25 +17,56 @@
 <div class="layout-px-spacing">
 
     <div class="middle-content container-xxl p-0">
-      
+
         <div class="row layout-top-spacing">
             <div class="d-flex justify-content-between">
                 <div class="ms-2 mb-4">
                     <h4 class="mb-0 page-title">SEARCH RESULTS</h4>
                     <nav class="breadcrumb-style-one" aria-label="breadcrumb">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ url('minutes/list') }}">Document Search</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Results</li>
+                            <li class="breadcrumb-item"><a href="{{ url('/dashboard') }}">Home</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Search Results</li>
                         </ol>
-                    </nav>                                          
-                </div>                                   
-            </div> 
+                    </nav>
+                </div>
+            </div>
 
-                {{-- RESOLUTIONS --}}                                   
+            <div class="ms-2 mb-4 tm-search-summary">
+                <div class="tm-search-summary-row">
+                    <div class="tm-search-summary-count">
+                        <strong>{{ $result_count }}</strong> {{ \Illuminate\Support\Str::plural('document', $result_count) }} found
+                    </div>
+                    <button type="button" class="tm-btn tm-btn-outline tm-btn-sm" data-bs-toggle="modal" data-bs-target="#global-search">
+                        Modify Search
+                    </button>
+                </div>
+                @if(count($filters_applied))
+                    <div class="tm-search-summary-filters">
+                        @foreach($filters_applied as $filter)
+                            <span class="tm-badge tm-badge-info">{{ $filter }}</span>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
+            @if($result_count === 0)
+                <div class="tm-search-empty">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <h5>No documents match your search</h5>
+                    <p class="tm-muted">Try fewer keywords, double-check the spelling, or widen the date range. If you're only searching one document type, make sure it's ticked in the search box.</p>
+                    <button type="button" class="tm-btn tm-btn-primary tm-btn-sm" data-bs-toggle="modal" data-bs-target="#global-search">Try Another Search</button>
+                </div>
+            @endif
+        </div>
+
+        <div class="tm-search-masonry">
+
+                {{-- RESOLUTIONS --}}
                 @foreach($resolutions as $item)
-                    <div class="col-lg-3 col-md-3 layout-spacing">
-                        <div class="card style-4 mt-4">
-                            <div class="card-body pt-3">                        
+                    <div class="tm-search-masonry-item">
+                        <div class="card style-4">
+                            <div class="card-body pt-3">
+                                <span class="tm-badge tm-badge-info mb-2">Resolution</span>
                                 <div class="media mt-0 mb-3">
                                     <div class="">
                                         <div class="avatar avatar-md me-3">
@@ -48,7 +74,7 @@
                                         </div>
                                     </div>
                                     <div class="media-body">
-                                        <h4 class="media-heading mb-0">{{ $item->title }}</h4>                                       
+                                        <h4 class="media-heading mb-0">{{ ucwords(strtolower($item->title), " \t\r\n\f\v(-\"'") }}</h4>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between">
@@ -62,7 +88,11 @@
                                     </div>                                                        
                                 </div>
                                 
-                                <p class="card-text mt-4 mb-0">Attested by {{ $item->attested_by }}. Recorded by {{ $item->recorded_by }}. Approved by {{ $item->approved_by }}. </p>
+                                <p class="card-text mt-4 mb-0">
+                                    Attested by {{ $item->attested_by }}.<br>
+                                    Recorded by {{ $item->recorded_by }}.<br>
+                                    Approved by {{ $item->approved_by }}.
+                                </p>
                             </div>
                             <div class="card-footer pt-0 border-0 text-center">
                                 <div class="row">
@@ -78,11 +108,12 @@
                     </div>
                 @endforeach
 
-                {{-- RESOLUTIONS --}}                                   
+                {{-- ORDINANCES --}}
                 @foreach($ordinances as $item)
-                    <div class="col-lg-3 col-md-3 layout-spacing">
-                        <div class="card style-4 mt-4">
-                            <div class="card-body pt-3">                        
+                    <div class="tm-search-masonry-item">
+                        <div class="card style-4">
+                            <div class="card-body pt-3">
+                                <span class="tm-badge tm-badge-sec mb-2">Ordinance</span>
                                 <div class="media mt-0 mb-3">
                                     <div class="">
                                         <div class="avatar avatar-md me-3">
@@ -90,7 +121,7 @@
                                         </div>
                                     </div>
                                     <div class="media-body">
-                                        <h4 class="media-heading mb-0">{{ $item->short_title }}</h4>                                       
+                                        <h4 class="media-heading mb-0">{{ $item->short_title }}</h4>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between">
@@ -120,11 +151,12 @@
                 @endforeach
 
 
-                {{-- MINUTES --}}                                   
+                {{-- MINUTES --}}
                 @foreach($minutes as $item)
-                    <div class="col-lg-3 col-md-3 layout-spacing">
-                        <div class="card style-4 mt-4">
-                            <div class="card-body pt-3">                        
+                    <div class="tm-search-masonry-item">
+                        <div class="card style-4">
+                            <div class="card-body pt-3">
+                                <span class="tm-badge tm-badge-acc mb-2">Minutes</span>
                                 <div class="media mt-0 mb-3">
                                     <div class="">
                                         <div class="avatar avatar-md me-3">
@@ -133,7 +165,7 @@
                                     </div>
                                     <div class="media-body">
                                         <h4 class="media-heading mb-0">{{ $item->presiding_officer }}</h4>
-                                        <p class="media-text">{{ $item->series_number }}</p>                                     
+                                        <p class="media-text">{{ $item->series_number }}</p>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between">
@@ -163,11 +195,12 @@
                 @endforeach
 
 
-                {{-- COMMUNICATIONS --}}                                   
+                {{-- COMMUNICATIONS --}}
                 @foreach($communications as $item)
-                    <div class="col-lg-3 col-md-3 layout-spacing">
-                        <div class="card style-4 mt-4">
-                            <div class="card-body pt-3">                        
+                    <div class="tm-search-masonry-item">
+                        <div class="card style-4">
+                            <div class="card-body pt-3">
+                                <span class="tm-badge tm-badge-ok mb-2">Communication</span>
                                 <div class="media mt-0 mb-3">
                                     <div class="">
                                         <div class="avatar avatar-md me-3">
@@ -175,9 +208,9 @@
                                         </div>
                                     </div>
                                     <div class="media-body">
-                                        <p class="media-text mb-0 {{ $item->communication_type=='INCOMING' ? 'text-info' : 'text-warning' }}">{{ $item->communication_type }}</p>           
+                                        <p class="media-text mb-0 {{ $item->communication_type=='INCOMING' ? 'text-info' : 'text-warning' }}">{{ $item->communication_type }}</p>
                                         <h4 class="media-heading ">{{ $item->particulars }}</h4>
-                                                                  
+
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between">

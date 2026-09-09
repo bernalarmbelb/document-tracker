@@ -30,7 +30,7 @@ class SangguniangActivitiesController extends Controller
 
     public function __construct()
     {
-        $this->middleware('permission:View Activities')->only(['all', 'upcoming', 'ongoing', 'completed', 'view', 'view_activity', 'print_list']);
+        $this->middleware('permission:View Activities')->only(['all', 'upcoming', 'ongoing', 'completed', 'view', 'view_activity', 'print_list', 'get_uploaded_files']);
         $this->middleware('permission:Add Activity')->only(['add', 'save_add', 'upload_supporting_documents']);
         $this->middleware('permission:Edit Activity')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Activity')->only(['move_to_archive']);
@@ -398,9 +398,9 @@ class SangguniangActivitiesController extends Controller
     }
 
     public function get_uploaded_files(Request $request)
-    {          
-        $data = $request->all();                
-        $records = SangguniangDocuments::where("resolution_id", $data['resolution_id'])->where('is_deleted', 0)->get();
+    {
+        $data = $request->all();
+        $records = SangguniangDocuments::where("activity_id", $data['activity_id'])->where('is_deleted', 0)->get();
 
         $rows = array(                         
             'rows' => $records,

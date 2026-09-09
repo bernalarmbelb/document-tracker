@@ -136,6 +136,9 @@
 /* wide, wrapping Title column */
 .tm-col-title { min-width: 340px; max-width: 440px; white-space: normal !important; }
 
+/* Search result cards — document title */
+.tm-search-masonry .media-heading { font-family: var(--tm-font-head); }
+
 /* clickable rows + floating row menu */
 .tm-table tbody tr { cursor: pointer; }
 .tm-row-menu {
@@ -184,6 +187,7 @@
 .tm-badge-bad  { background: rgba(220, 53, 69, 0.14);  color: var(--tm-danger); }
 .tm-badge-info { background: rgba(66, 122, 181, 0.14); color: var(--tm-primary); }
 .tm-badge-sec  { background: rgba(64, 106, 175, 0.14); color: var(--tm-secondary); }
+.tm-badge-acc  { background: rgba(214, 170, 20, 0.16); color: #B8860B; }
 
 /* ── Form inputs ─────────────────────────────────────────────────────────── */
 .tm-input, .tm-select, .tm-textarea {
@@ -406,18 +410,151 @@
 #global-search .modal-header {
 	background: #fff !important;
 	border-bottom: 1px solid var(--tm-line) !important;
-	padding: 16px 20px !important;
+	padding: 18px 22px !important;
 	border-radius: 14px 14px 0 0 !important;
+	align-items: flex-start !important;
 }
-#global-search .modal-title { font-family: var(--tm-font-head) !important; font-weight: 700 !important; font-size: 17px !important; color: #1a1919 !important; }
-#global-search .modal-body { background: #fff !important; padding: 20px !important; border-radius: 0 0 14px 14px !important; }
+#global-search .modal-title { font-family: var(--tm-font-head) !important; font-weight: 700 !important; font-size: 18px !important; color: #1a1919 !important; }
+.tm-search-modal-sub { margin: 4px 0 0; font-size: 12.5px; color: var(--tm-muted); }
+#global-search .modal-body { background: #fff !important; padding: 22px !important; border-radius: 0 0 14px 14px !important; }
 #global-search .btn-close { color: var(--tm-muted); opacity: .7; }
 #global-search .tm-label,
-#global-search .form-check-label,
-#global-search label { color: #333 !important; }
-#global-search .form-check-label { font-size: 13px; font-weight: 500; }
-#global-search .form-check-input { width: 16px; height: 16px; margin-top: .15rem; }
-#global-search .form-check-input:checked { background-color: var(--tm-primary); border-color: var(--tm-primary); }
+#global-search label:not(.tm-type-chip) { color: #333 !important; }
+
+.tm-search-hint { margin: -2px 0 10px; font-size: 12px; color: var(--tm-muted); }
+.tm-search-hint-inline { font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--tm-muted); }
+.tm-search-divider { border: none; border-top: 1px solid var(--tm-line); margin: 4px 0 14px; }
+
+/* Document-type / ordinance-type toggle chips — replace bare checkboxes with
+   a tappable pill so non-technical staff can see selections at a glance. */
+.tm-type-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+.tm-type-chip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 9px 16px;
+	border: 1.5px solid var(--tm-line);
+	border-radius: 24px;
+	font-size: 13px;
+	font-weight: 600;
+	color: #333;
+	background: #fff;
+	cursor: pointer;
+	user-select: none;
+	transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.tm-type-chip:hover { border-color: var(--tm-primary); }
+.tm-type-chip input[type="checkbox"] {
+	position: absolute;
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+.tm-type-chip:has(input:checked),
+.tm-type-chip.is-checked {
+	border-color: var(--tm-primary);
+	background: var(--tm-primary);
+	color: #fff;
+}
+.tm-type-chip:has(input:focus-visible) { outline: 2px solid var(--tm-primary); outline-offset: 2px; }
+.tm-type-chips-sm { padding: 10px 12px; background: #f8fafc; border: 1px solid var(--tm-line); border-radius: 10px; margin-top: -2px; }
+.tm-type-chip-sm { padding: 6px 12px; font-size: 12px; font-weight: 500; border-radius: 18px; }
+
+/* ── Customized calendar (flatpickr) — reskinned to match the app, replaces
+   the browser's native date picker on the search modal's date fields ──── */
+.flatpickr-calendar {
+	font-family: var(--tm-font) !important;
+	border-radius: 12px !important;
+	box-shadow: 0 12px 32px rgba(16, 24, 40, 0.18) !important;
+	border: 1px solid var(--tm-line) !important;
+}
+.flatpickr-calendar.arrowTop:before,
+.flatpickr-calendar.arrowTop:after { display: none !important; }
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month,
+.flatpickr-current-month input.cur-year {
+	color: #1a1919 !important;
+}
+.flatpickr-months .flatpickr-prev-month,
+.flatpickr-months .flatpickr-next-month { fill: var(--tm-primary) !important; color: var(--tm-primary) !important; }
+.flatpickr-months .flatpickr-prev-month:hover svg,
+.flatpickr-months .flatpickr-next-month:hover svg { fill: var(--tm-primary-hover) !important; }
+span.flatpickr-weekday {
+	font-family: var(--tm-font) !important;
+	font-weight: 700 !important;
+	font-size: 10.5px !important;
+	text-transform: uppercase !important;
+	letter-spacing: 0.03em !important;
+	color: var(--tm-muted) !important;
+}
+.flatpickr-day {
+	border-radius: 8px !important;
+	font-family: var(--tm-font) !important;
+	font-size: 13px !important;
+}
+.flatpickr-day.today { border-color: var(--tm-primary) !important; }
+.flatpickr-day:hover,
+.flatpickr-day.today:hover { background: rgba(66, 122, 181, 0.12) !important; border-color: rgba(66, 122, 181, 0.12) !important; }
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+	background: var(--tm-primary) !important;
+	border-color: var(--tm-primary) !important;
+	color: #fff !important;
+}
+.flatpickr-day.selected.today { box-shadow: none !important; }
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover,
+.flatpickr-day.prevMonthDay,
+.flatpickr-day.nextMonthDay { color: rgba(51, 51, 51, 0.3) !important; }
+.numInputWrapper:hover { background: rgba(66, 122, 181, 0.08) !important; }
+
+.tm-search-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 6px; border-top: 1px solid var(--tm-line); margin-top: 6px; }
+.tm-search-actions .tm-btn { flex: 0 0 auto; }
+@media (max-width: 520px) {
+	.tm-search-actions { flex-direction: column-reverse; }
+	.tm-search-actions .tm-btn { width: 100%; }
+}
+
+/* ── Search results — filter summary + empty state ───────────────────────── */
+.tm-search-summary { display: flex; flex-direction: column; gap: 10px; }
+.tm-search-summary-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+.tm-search-summary-count { font-family: var(--tm-font); font-size: 14px; color: #333; }
+.tm-search-summary-count strong { font-family: var(--tm-font-head); font-size: 17px; }
+.tm-search-summary-filters { display: flex; flex-wrap: wrap; gap: 6px; }
+.tm-search-masonry {
+	column-count: 4;
+	column-gap: 24px;
+	margin-top: 4px;
+}
+.tm-search-masonry-item {
+	break-inside: avoid;
+	-webkit-column-break-inside: avoid;
+	page-break-inside: avoid;
+	margin-bottom: 24px;
+	display: inline-block;
+	width: 100%;
+}
+.tm-search-masonry-item .card { margin-top: 0; }
+@media (max-width: 1399px) { .tm-search-masonry { column-count: 3; } }
+@media (max-width: 991px)  { .tm-search-masonry { column-count: 2; } }
+@media (max-width: 575px)  { .tm-search-masonry { column-count: 1; } }
+
+.tm-search-empty {
+	width: 100%;
+	text-align: center;
+	padding: 56px 24px;
+	margin: 0 0 8px;
+	border: 1px dashed var(--tm-line);
+	border-radius: 14px;
+	background: #fbfcfe;
+	color: var(--tm-muted);
+}
+.tm-search-empty svg { width: 40px; height: 40px; color: var(--tm-muted); margin-bottom: 12px; }
+.tm-search-empty h5 { font-family: var(--tm-font-head); font-weight: 700; color: #1a1919; margin-bottom: 8px; }
+.tm-search-empty p { max-width: 460px; margin: 0 auto 18px; font-size: 13px; }
 
 /* ── SweetAlert2 — compact, professional treasury look ───────────────────── */
 .swal2-popup {
@@ -561,3 +698,86 @@ body { padding-bottom: 56px; }
 	animation: tm-spin .7s linear infinite;
 }
 @keyframes tm-spin { to { transform: rotate(360deg); } }
+
+/* ── Uploaded-file list (used under the FilePond dropzone on add/edit forms
+   and next to it on record view pages) — small muted icon + filename, trash
+   icon flush right, instead of a raw Bootstrap list-group ────────────────── */
+.tm-doclist { list-style: none; margin: 0; padding: 0; }
+.tm-doclist li { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--tm-line); font-size: 13px; }
+.tm-doclist li:last-child { border-bottom: none; }
+.tm-doclist a { color: var(--tm-primary); text-decoration: none; }
+.tm-doclist .tm-doc-del { margin-left: auto; color: var(--tm-danger); flex-shrink: 0; }
+
+/* ── Supporting Documents upload (FilePond) — centered empty state ──────── */
+/* FilePond's own stylesheet sets font-family: -apple-system, ... on .filepond--root;
+   override so the dropzone copy/button match the rest of the app (Manrope). */
+.filepond--root { font-family: var(--tm-font) !important; }
+
+/* Match the "Add Supporting Document" modal header to the rest of the app's headings (Archivo) */
+#add-supporting-documents .modal-title { font-family: var(--tm-font-head) !important; }
+
+.tm-upload-drop {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	padding: 24px;
+	width: 100%;
+}
+.tm-upload-drop-ico { width: 42px; height: 42px; margin-bottom: 14px; color: var(--tm-muted); }
+.tm-upload-drop-ico svg { width: 100%; height: 100%; }
+.tm-upload-drop-desc {
+	font-size: 12.5px !important;
+	color: var(--tm-muted) !important;
+	letter-spacing: normal !important;
+	text-align: center !important;
+	max-width: 300px;
+	margin: 0 0 18px !important;
+	line-height: 1.5 !important;
+}
+.tm-upload-drop-btn.filepond--label-action {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--tm-dark) !important;
+	color: #fff !important;
+	padding: 10px 20px;
+	border-radius: 24px;
+	font-family: var(--tm-font);
+	font-size: 12.5px;
+	font-weight: 700;
+	text-decoration: none !important;
+	cursor: pointer;
+	transition: background-color .18s ease;
+}
+.tm-upload-drop-btn.filepond--label-action:hover { background: #555 !important; }
+.tm-upload-drop-btn svg:first-child { width: 14px; height: 14px; }
+.tm-upload-drop-btn svg:last-child { width: 12px; height: 12px; opacity: .6; }
+
+/* Modal uploader — tall enough that the icon/copy/button sit centered in the modal, not pinned to the top.
+   !important: the admin theme's own assets/css/light/plugins.css (loaded globally, ahead of this file)
+   carries an equal-specificity `.filepond--root .filepond--drop-label{min-height:4.75em}` — without
+   !important that rule wins on source order alone and collapses the box back down. */
+#add-supporting-documents .filepond--drop-label { min-height: 320px !important; }
+
+/* Inline (add/edit form) uploader — shorter, still vertically centered */
+.tm-upload-inline .filepond--drop-label { min-height: 200px !important; }
+
+/* That same global plugins.css also paints a flat background straight onto .filepond--drop-label
+   itself (the element actually on top, z-index 5) — so styling the panel behind it never shows.
+   Paint the dashed dropzone look on the drop-label directly instead, with !important to win. */
+#add-supporting-documents .filepond--drop-label,
+.tm-upload-inline .filepond--drop-label {
+	background-color: #f8fafc !important;
+	border: 1.5px dashed var(--tm-line) !important;
+	border-radius: 14px !important;
+	box-sizing: border-box !important;
+}
+#add-supporting-documents .filepond--hopper[data-hopper-state="drag-over"] .filepond--drop-label,
+.tm-upload-inline .filepond--hopper[data-hopper-state="drag-over"] .filepond--drop-label {
+	border-color: var(--tm-primary) !important;
+	background-color: rgba(66, 122, 181, 0.05) !important;
+}
+#add-supporting-documents .filepond--credits,
+.tm-upload-inline .filepond--credits { display: none; }

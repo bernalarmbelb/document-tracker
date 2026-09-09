@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.css") }}">
 <link href="{{ asset("assets/src/plugins/css/light/sweetalerts2/custom-sweetalert.css") }}" rel="stylesheet" type="text/css" />
 <link href="{{ asset("assets/src/assets/css/light/components/modal.css") }}" rel="stylesheet" type="text/css" />
+<link rel="stylesheet" href="{{ asset("assets/src/plugins/src/filepond/filepond.min.css") }}">
 
 <style>
     #zero-config.tm-table td, #zero-config.tm-table th { white-space: nowrap; }
@@ -146,23 +147,9 @@
             </div>
             <div class="modal-body">
                 <h6 class='text-primary mb-2' id='h6_add_supporting_document'></h6>
-
-                <div class="widget-content widget-content-area blog-create-section mb-3">
-                    <div class="m-3">
-                        <form  action="{{ url('/resolutions/upload_supporting_documents_single/') }}" method="post" autocomplete="off" enctype="multipart/form-data">  
-                            @csrf
-                            <input type="hidden" id="supporting_document_resolution_id" name="resolution_id" value="">                                                      
-                            <input type="file" name="myfile"
-                                onchange="this.form.submit()"                                   
-                                name="files[]"                                                                   
-                                >
-                                                 
-                        </form>
-                    </div>                
-                </div>
-
-                <ul id="my_files" class="list-group mt-2"></ul>
-
+                <input type="hidden" id="supporting_document_resolution_id" value="">
+                <input type="file" class="filepond" id="filepond-quick" name="filepond" multiple>
+                <ul id="my_files" class="tm-doclist mt-2"></ul>
             </div>       
         </div>
     </div>
@@ -172,6 +159,7 @@
 @section("additional_footer")
 <script src="{{ asset("assets/src/plugins/src/table/datatable/datatables.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.min.js") }}"></script>
+<script src="{{ asset("assets/src/plugins/src/filepond/filepond.min.js") }}"></script>
 <script src="{{ asset("js/app.js") }}"></script>
 
 <script>
@@ -265,23 +253,33 @@
     }    
 
     function view_files(param, paramparticulars)
-    {               
+    {
         document.getElementById('supporting_document_resolution_id').value = param;
-        document.getElementById('h6_add_supporting_document').innerHTML =  paramparticulars;                          
+        document.getElementById('h6_add_supporting_document').innerHTML =  paramparticulars;
+        refreshQuickUploadedFiles(param);
+        initFilePondQuick(param);
+    }
+
+    function refreshQuickUploadedFiles(param) {
         $.ajax({
                 type: 'POST',
                 data: {resolution_id: param},
                 dataType: "json",
                 url:'{{ url("resolutions/get_uploaded_files") }}',
-                success: function (data){		
+                success: function (data){
                     items  = data['rows'];
                     const ul = document.getElementById('my_files');
                     ul.innerHTML = '';
 
                     items.forEach(item => {
                         const li = document.createElement('li');
-                        li.classList.add('list-group-item');
-                        li.classList.add('ps-1');
+
+                        const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                        icon.setAttribute('width', '16'); icon.setAttribute('height', '16'); icon.setAttribute('viewBox', '0 0 24 24');
+                        icon.setAttribute('fill', 'none'); icon.setAttribute('stroke', 'currentColor'); icon.setAttribute('stroke-width', '2');
+                        icon.setAttribute('stroke-linecap', 'round'); icon.setAttribute('stroke-linejoin', 'round');
+                        icon.style.color = 'var(--tm-muted)'; icon.style.flexShrink = '0';
+                        icon.innerHTML = '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>';
 
                         const a = document.createElement('a');
                         a.href = "{{ url('uploads_resolutions') }}/" + item.filename;
@@ -290,32 +288,73 @@
                         a.title = "View File";
 
                         const b = document.createElement('a');
-                        b.classList.add('me-2');
-                        b.classList.add('text-danger');
+                        b.classList.add('tm-doc-del');
                         b.href = "{{ url('resolutions/delete_uploaded_file') }}/" + item.id;
-                        b.innerHTML  = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash-2 p-1 br-8 mb-1 delete-note"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';                       
+                        b.innerHTML  = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>';
                         b.title = "Delete File";
                         b.onclick = function (event) {
                             if (!confirm("Are you sure you want to delete this file?")) {
-                                event.preventDefault(); 
+                                event.preventDefault();
                             }
                         };
 
-                        li.appendChild(b);
+                        li.appendChild(icon);
                         li.appendChild(a);
-                        
+                        li.appendChild(b);
+
                         ul.appendChild(li);
-                    });                                                                                                           
-                        
+                    });
                 },
-                error: function(XHR, textStatus, errorThrown) 
+                error: function(XHR, textStatus, errorThrown)
                 {
                     console.log(errorThrown);
                     console.log(XHR.responseText);
-                } 
+                }
         }
         );
     }
-    
+
+    let filepondQuick = null;
+
+    function initFilePondQuick(resolutionId) {
+        const input = document.getElementById('filepond-quick');
+        if (filepondQuick) {
+            filepondQuick.destroy();
+        }
+        filepondQuick = FilePond.create(input, {
+            allowMultiple: true,
+            storeAsFile: true,
+            credits: false,
+            labelIdle: `
+                <div class="tm-upload-drop">
+                    <div class="tm-upload-drop-ico">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="11" x2="12" y2="17"></line>
+                            <line x1="9" y1="14" x2="15" y2="14"></line>
+                        </svg>
+                    </div>
+                    <p class="tm-upload-drop-desc">Add PDF, Word, Excel, or image files for this record.<br>Files appear in the list below once uploaded.</p>
+                    <span class="filepond--label-action tm-upload-drop-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        Add files
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </span>
+                </div>
+            `,
+            server: {
+                process: '{{ url("/resolutions/upload_supporting_documents") }}?resolution_id=' + resolutionId,
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+            },
+            onprocessfile: function (error, file) {
+                if (!error) {
+                    refreshQuickUploadedFiles(resolutionId);
+                }
+            }
+        });
+    }
 </script>
 @endsection

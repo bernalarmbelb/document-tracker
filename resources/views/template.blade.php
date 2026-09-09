@@ -25,6 +25,7 @@
     <!-- BEGIN PAGE LEVEL PLUGINS/CUSTOM STYLES -->
     <link rel="stylesheet" type="text/css" href="{{ asset("assets/src/assets/css/light/elements/alert.css") }}">
     <link rel="stylesheet" type="text/css" href="{{ asset("assets/src/assets/css/dark/elements/alert.css") }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset("assets/src/plugins/src/flatpickr/flatpickr.css") }}">
     <!-- END PAGE LEVEL PLUGINS/CUSTOM STYLES -->
 
 	@yield('additional_head')
@@ -153,101 +154,126 @@
 
             <div class="modal fade" id="global-search" tabindex="-1" role="dialog" aria-labelledby="tabsModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg" role="document">
-                  <div class="modal-content">
+                  <div class="modal-content tm-search-modal">
                     <div class="modal-header">
-                      <h5 class="modal-title" id="tabsModalLabel">Search Document</h5>                     
+                      <div>
+                        <h5 class="modal-title" id="tabsModalLabel">Search Documents</h5>
+                        <p class="tm-search-modal-sub">Find resolutions, ordinances, minutes and communications in one place.</p>
+                      </div>
                       <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                       </button>
                     </div>
-                    <div class="modal-body">                        
-                        <form class="row g-3" action="{{ url('/global_search') }}" method="post" autocomplete="off">  
-                            @csrf                                                                     
-                            <label class="tm-label">Choose Document Type</label>
-                            <div class="col-12 mb-2">
-                                <div class="form-check form-check-primary form-check-inline pe-2">
-                                    <input class="form-check-input" type="checkbox" name="resolutions" value="1" id="form-check-resolutions" {{ session('search_resolution')=='1' ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="form-check-resolutions">
-                                        Resolutions
+                    <div class="modal-body">
+                        <form class="row g-3" action="{{ url('/global_search') }}" method="post" autocomplete="off" id="global-search-form">
+                            @csrf
+
+                            <div class="col-12">
+                                <label class="tm-label">1. What are you looking for?</label>
+                                <p class="tm-search-hint">Leave every box unticked to search all document types.</p>
+                                <div class="tm-type-chips">
+                                    <label class="tm-type-chip">
+                                        <input type="checkbox" name="resolutions" value="1" id="form-check-resolutions" {{ session('search_resolution')=='1' ? 'checked' : '' }}>
+                                        <span>Resolutions</span>
                                     </label>
-                                </div>
-    
-                                <div class="form-check form-check-primary form-check-inline pe-2">
-                                    <input class="form-check-input" type="checkbox" name="ordinances" value="1" id="form-check-ordinances" {{ session('search_ordinance')=='1' ? 'checked' : '' }} onchange="toggle_ordinances()">
-                                    <label class="form-check-label" for="form-check-ordinances">
-                                        Ordinances
+
+                                    <label class="tm-type-chip">
+                                        <input type="checkbox" name="ordinances" value="1" id="form-check-ordinances" {{ session('search_ordinance')=='1' ? 'checked' : '' }} onchange="toggle_ordinances()">
+                                        <span>Ordinances</span>
                                     </label>
-                                </div>
-    
-                                <div class="form-check form-check-primary form-check-inline pe-2">
-                                    <input class="form-check-input" type="checkbox" name="minutes" value="1" id="form-check-minutes" {{ session('search_minute')=='1' ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="form-check-minutes">
-                                        Minutes
+
+                                    <label class="tm-type-chip">
+                                        <input type="checkbox" name="minutes" value="1" id="form-check-minutes" {{ session('search_minute')=='1' ? 'checked' : '' }}>
+                                        <span>Minutes</span>
                                     </label>
-                                </div>
-    
-                                <div class="form-check form-check-primary form-check-inline pe-2">
-                                    <input class="form-check-input" type="checkbox" name="communications" value="1" id="form-check-communications" {{ session('search_communication')=='1' ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="form-check-communications">
-                                        Communications
+
+                                    <label class="tm-type-chip">
+                                        <input type="checkbox" name="communications" value="1" id="form-check-communications" {{ session('search_communication')=='1' ? 'checked' : '' }}>
+                                        <span>Communications</span>
                                     </label>
                                 </div>
                             </div>
 
-                            <label class="tm-label" id="lbl_ordinance_type">Ordinance Type</label>                      
-                            <div class="col-12 mb-2" id="div_ordinance_type">
-                                @foreach(Auth::user()->getOrdinanceTypes() as $item)
-                                    <div class="form-check form-check-primary form-check-inline pe-2">
-                                        <input class="form-check-input" type="checkbox" name="ordinance_types[]" value="{{ $item->ordinance_type }}" id="form-check-type-{{ str_replace(' ', '-', $item->ordinance_type) }}" {{ in_array($item->ordinance_type, session('search_ordinance_types') ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="form-check-type-{{ str_replace(' ', '-', $item->ordinance_type) }}">
-                                            {{ $item->ordinance_type }}
+                            <div class="col-12" id="div_ordinance_type">
+                                <label class="tm-label" id="lbl_ordinance_type">Ordinance Type <span class="tm-search-hint-inline">(only applies to Ordinances)</span></label>
+                                <div class="tm-type-chips tm-type-chips-sm">
+                                    @foreach(Auth::user()->getOrdinanceTypes() as $item)
+                                        <label class="tm-type-chip tm-type-chip-sm">
+                                            <input type="checkbox" name="ordinance_types[]" value="{{ $item->ordinance_type }}" id="form-check-type-{{ str_replace(' ', '-', $item->ordinance_type) }}" {{ in_array($item->ordinance_type, session('search_ordinance_types') ?? []) ? 'checked' : '' }}>
+                                            <span>{{ $item->ordinance_type }}</span>
                                         </label>
-                                    </div>
-                                @endforeach                                                                 
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <hr class="tm-search-divider">
+                                <label class="tm-label">2. Narrow it down <span class="tm-search-hint-inline">(optional)</span></label>
                             </div>
 
                             <div class="col-12 mb-2">
-                                <label class="tm-label">Search by Title</label>
-                                <input type="text" class="tm-input" placeholder="Enter Title..." value="{{ session('search_title') }}" name="title" >
+                                <label class="tm-label">Title</label>
+                                <input type="text" class="tm-input" placeholder="e.g. Annual Budget" value="{{ session('search_title') }}" name="title" >
                             </div>
-    
+
                             <div class="col-12 mb-2">
-                                <label class="tm-label">Search by Keywords </label>
-                                <input type="text" class="tm-input" placeholder="Enter Keywords..." value="{{ session('search_keyword') }}" name="keyword" >
-                            </div>
-                          
-    
-                            <div class="col-6 mb-2">
-                                <label class="tm-label">Search by Author / Presiding Officer</label>
-                                <input type="text" class="tm-input"  placeholder="Enter Author or Presiding Officer..." value="{{ session('search_author') }}" name="author" >
+                                <label class="tm-label">Keywords</label>
+                                <input type="text" class="tm-input" placeholder="e.g. flood control, ATM signage" value="{{ session('search_keyword') }}" name="keyword" >
                             </div>
 
-                            <div class="col-6 mb-2">
-                                <label class="tm-label">Search by Series Number</label>
-                                <input type="text" class="tm-input" placeholder="Enter Series Number..." value="{{ session('search_series_number') }}" name="series_number" >
+                            <div class="col-md-6 mb-2">
+                                <label class="tm-label">Author / Presiding Officer</label>
+                                <input type="text" class="tm-input"  placeholder="e.g. Hon. Juan Dela Cruz" value="{{ session('search_author') }}" name="author" >
                             </div>
 
-                            <div class="col-6 mb-2">
-                                <label class="tm-label">Search by Date Created</label>
-                                <input type="date" class="tm-input"  name="start_date" value="{{ session('search_start_date') ?: '' }}" >
+                            <div class="col-md-6 mb-2">
+                                <label class="tm-label">Series Number</label>
+                                <input type="text" class="tm-input" placeholder="e.g. 139" value="{{ session('search_series_number') }}" name="series_number" >
                             </div>
 
-                            <div class="col-6 mb-2">
-                                <label class="tm-label">&nbsp;</label>
-                                <input type="date" class="tm-input"  name="end_date" value="{{ session('search_end_date') ?: '' }}">
+                            <div class="col-md-6 mb-2">
+                                <label class="tm-label">Date Created — From</label>
+                                <input type="text" class="tm-input tm-datepicker" id="search-start-date" placeholder="Select date..." name="start_date" value="{{ session('search_start_date') ?: '' }}" autocomplete="off">
                             </div>
-                                                                                                  
-                            <div class="col-12 mt-2">
-                                <button type="submit" name="btnsave" value="1" class="tm-btn tm-btn-primary tm-btn-block">🔍 Search Documents</button>
+
+                            <div class="col-md-6 mb-2">
+                                <label class="tm-label">Date Created — To</label>
+                                <input type="text" class="tm-input tm-datepicker" id="search-end-date" placeholder="Select date..." name="end_date" value="{{ session('search_end_date') ?: '' }}" autocomplete="off">
                             </div>
-                        
-                        </form>    
+
+                            <div class="col-12 mt-2 tm-search-actions">
+                                <button type="submit" formaction="{{ url('/global_search/clear') }}" formnovalidate class="tm-btn tm-btn-outline">Clear Filters</button>
+                                <button type="submit" name="btnsave" value="1" class="tm-btn tm-btn-primary">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                    Search Documents
+                                </button>
+                            </div>
+
+                        </form>
                     </div>
-                   
+
                   </div>
                 </div>
               </div>
-		
+
+            @auth
+            <div class="modal fade" id="idle-timeout-modal" tabindex="-1" aria-labelledby="idle-timeout-modal-label" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="idle-timeout-modal-label">Still there?</h5>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">You've been idle for a while. For your security, you'll be logged out in <strong><span id="idle-timeout-countdown">60</span> seconds</strong> unless you stay logged in.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ url('/logout') }}" class="tm-btn">Logout now</a>
+                        <button type="button" id="idle-timeout-stay-btn" class="tm-btn tm-btn-primary">Stay logged in</button>
+                    </div>
+                  </div>
+                </div>
+            </div>
+            @endauth
 
             <div class="footer-wrapper" style="font-family:'Manrope',sans-serif;color:var(--tm-muted,#7A7777);font-size:12px;border-top:1px solid rgba(51,51,51,.08);margin-top:8px">
                 <div class="footer-section f-section-1">
@@ -309,7 +335,41 @@
     </div>
     <!-- END MAIN CONTAINER -->
 
+    <script src="{{ asset("assets/src/plugins/src/flatpickr/flatpickr.js") }}"></script>
     <script>
+        // ── Search modal — customized calendar (replaces the native date picker) ──
+        (function () {
+            var startInput = document.getElementById('search-start-date');
+            var endInput = document.getElementById('search-end-date');
+            if (!startInput || !endInput || typeof flatpickr === 'undefined') return;
+
+            var startPicker = flatpickr(startInput, {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altInputClass: 'tm-input tm-datepicker',
+                altFormat: 'M j, Y',
+                allowInput: true,
+                monthSelectorType: 'static',
+                onChange: function (selectedDates) {
+                    endPicker.set('minDate', selectedDates[0] || null);
+                },
+            });
+            var endPicker = flatpickr(endInput, {
+                dateFormat: 'Y-m-d',
+                altInput: true,
+                altInputClass: 'tm-input tm-datepicker',
+                altFormat: 'M j, Y',
+                allowInput: true,
+                monthSelectorType: 'static',
+                onChange: function (selectedDates) {
+                    startPicker.set('maxDate', selectedDates[0] || null);
+                },
+            });
+
+            if (startInput.value) endPicker.set('minDate', startInput.value);
+            if (endInput.value) startPicker.set('maxDate', endInput.value);
+        })();
+
         // ── Live date/time (top nav header) ──────────────────────────────
         function updateDateTime() {
             const now = new Date();
@@ -335,20 +395,30 @@
         updateDateTime();
         setInterval(updateDateTime, 1000);
 
+        // Keep the type-chip highlight in sync for browsers without :has() support.
+        document.querySelectorAll('.tm-type-chip input[type="checkbox"]').forEach(function (cb) {
+            var syncChip = function () { cb.closest('.tm-type-chip').classList.toggle('is-checked', cb.checked); };
+            cb.addEventListener('change', syncChip);
+            syncChip();
+        });
+
         toggle_ordinances();
 
         function toggle_ordinances()
         {
-            //console.log("ordinance" + document.getElementById("form-check-ordinances").checked);   
-            if(document.getElementById("form-check-ordinances").checked)
-            {
-                document.getElementById("lbl_ordinance_type").style.display = "block"; 
-                document.getElementById("div_ordinance_type").style.display = "block";
-            }
-            else
-            {
-                document.getElementById("lbl_ordinance_type").style.display = "none"; 
-                document.getElementById("div_ordinance_type").style.display = "none";
+            var ordinancesChecked = document.getElementById("form-check-ordinances").checked;
+            var ordinanceTypeSection = document.getElementById("div_ordinance_type");
+
+            ordinanceTypeSection.style.display = ordinancesChecked ? "block" : "none";
+
+            // A checkbox hidden by CSS is still submitted with the form — clear any
+            // leftover ordinance-type selection so it can't quietly filter out other
+            // document types the next time someone searches.
+            if (!ordinancesChecked) {
+                ordinanceTypeSection.querySelectorAll('input[type="checkbox"]').forEach(function (cb) {
+                    cb.checked = false;
+                    cb.closest('.tm-type-chip').classList.remove('is-checked');
+                });
             }
         }
     </script>
@@ -356,6 +426,9 @@
     <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->
 	<script src="{{ asset("assets/src/plugins/src/global/vendors.min.js") }}"></script>
     <script src="{{ asset("assets/src/bootstrap/js/bootstrap.bundle.min.js") }}"></script>
+    @auth
+    <script src="{{ asset("assets/src/assets/js/idle-timeout.js") }}?v={{ @filemtime(public_path('assets/src/assets/js/idle-timeout.js')) }}"></script>
+    @endauth
     <script src="{{ asset("assets/src/plugins/src/perfect-scrollbar/perfect-scrollbar.min.js") }}"></script>
     <script src="{{ asset("assets/src/plugins/src/mousetrap/mousetrap.min.js") }}"></script>
     <script src="{{ asset("assets/src/plugins/src/waves/waves.min.js") }}"></script>

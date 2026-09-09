@@ -21,7 +21,13 @@ Route::get('/logout', [LoginController::class, 'logout']);
 Route::post('/check_login', [LoginController::class, 'check_login']);
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [LoginController::class, 'dashboard']);   
+    Route::get('/dashboard', [LoginController::class, 'dashboard']);
+
+    // Touches the session on every call so the idle-timeout "Stay logged in"
+    // action also resets the server-side SESSION_LIFETIME clock.
+    Route::get('/keepalive', function () {
+        return response()->noContent();
+    })->name('keepalive');
 
     //RESOLUTIONS
     Route::get('/resolutions/list', [ResolutionsController::class, 'list'])->name("resolutions.list");
@@ -80,8 +86,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/minutes/delete_uploaded_file_view/{id1}', [MinutesController::class, 'delete_uploaded_file_view'])->name("minutes.delete_uploaded_file_view");
 
     Route::post('/minutes/save_add', [MinutesController::class, 'save_add'])->name("minutes.save_add");
-    Route::post('/minutes/save_changes', [MinutesController::class, 'save_changes'])->name("minutes.save_changes");  
-    Route::post('/minutes/upload_supporting_documents', [MinutesController::class, 'upload_supporting_documents'])->name("minutes.upload_supporting_documents");  
+    Route::post('/minutes/save_changes', [MinutesController::class, 'save_changes'])->name("minutes.save_changes");
+    Route::post('/minutes/upload_supporting_documents', [MinutesController::class, 'upload_supporting_documents'])->name("minutes.upload_supporting_documents");
+    Route::post('/minutes/get_uploaded_files', [MinutesController::class, 'get_uploaded_files'])->name("minutes.get_uploaded_files");
     Route::post('/minutes/search', [MinutesController::class, 'search'])->name("minutes.search");
     Route::post('/minutes/search_grid', [MinutesController::class, 'search_grid'])->name("minutes.search_grid");
 
@@ -138,8 +145,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/archive/users_unarchive/{id}', [ArchiveController::class, 'users_unarchive'])->name("archive.users_unarchive");
     Route::get('/archive/sangguniang_unarchive/{id}', [ArchiveController::class, 'sangguniang_unarchive'])->name("archive.sangguniang_unarchive");
     
-    //GLOBAL SEARCH    
+    //GLOBAL SEARCH
     Route::post('/global_search', [SearchController::class, 'global_search'])->name("search.global_search");
+    Route::post('/global_search/clear', [SearchController::class, 'clear'])->name("search.clear");
 
     //SIGNATORIES
     Route::get('/signatories/list', [SignatoriesController::class, 'list'])->name('signatories.list');
@@ -163,7 +171,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/activities/edit/{id}', [SangguniangActivitiesController::class, 'edit'])->name("activities.edit");
     Route::post('/activities/save_add', [SangguniangActivitiesController::class, 'save_add'])->name("activities.save_add");
     Route::post('/activities/save_changes', [SangguniangActivitiesController::class, 'save_changes'])->name("activities.save_changes");  
-    Route::post('/activities/upload_supporting_documents', [SangguniangActivitiesController::class, 'upload_supporting_documents'])->name("activities.upload_supporting_documents");  
+    Route::post('/activities/upload_supporting_documents', [SangguniangActivitiesController::class, 'upload_supporting_documents'])->name("activities.upload_supporting_documents");
+    Route::post('/activities/get_uploaded_files', [SangguniangActivitiesController::class, 'get_uploaded_files'])->name("activities.get_uploaded_files");
     Route::get('/activities/delete_uploaded_file_view/{id1}', [SangguniangActivitiesController::class, 'delete_uploaded_file_view'])->name("activities.delete_uploaded_file_view");
     Route::get('/activities/move_to_archive/{id}', [SangguniangActivitiesController::class, 'move_to_archive'])->name("activities.move_to_archive");
     Route::get('/activities/print_list/{mode}', [SangguniangActivitiesController::class, 'print_list'])->name("activities.print_list");

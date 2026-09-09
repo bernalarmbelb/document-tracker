@@ -33,7 +33,7 @@ class MinutesController extends Controller
             return $next($request);
         });
 
-        $this->middleware('permission:View Minutes')->only(['list', 'list_grid', 'attendance_report', 'view', 'view_minute', 'generate_pdf', 'search', 'search_grid']);
+        $this->middleware('permission:View Minutes')->only(['list', 'list_grid', 'attendance_report', 'view', 'view_minute', 'generate_pdf', 'search', 'search_grid', 'get_uploaded_files']);
         $this->middleware('permission:Add Minute')->only(['add', 'save_add', 'upload_supporting_documents']);
         $this->middleware('permission:Edit Minute')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Minute')->only(['delete', 'move_to_archive']);
@@ -341,8 +341,21 @@ class MinutesController extends Controller
             log_activity('Add Supporting Documents - Minutes', json_encode($data));       
 
             return response()->json(['path' => $path]);
-           
-        }       
+
+        }
+
+        return response()->json(['error' => 'No file received.'], 422);
+    }
+
+    public function get_uploaded_files(Request $request)
+    {
+        $data = $request->all();
+        $records = MinutesDocuments::where("minute_id", $data['minute_id'])->where('is_deleted', 0)->get();
+
+        $rows = array(
+            'rows' => $records,
+        );
+        echo json_encode($rows);
     }
 
     public function generate_pdf($transid)
