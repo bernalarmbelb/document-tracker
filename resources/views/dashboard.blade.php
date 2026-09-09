@@ -495,37 +495,42 @@
         renderCalendar();
         renderAgenda();
 
-        // Even out the dashboard columns: grow the trend chart to fill the left
-        // column's shortfall against the (deterministic) Quick Actions + Activity
-        // History stack — real chart content, not blank space. Separately, clamp
-        // the calendar card's agenda list to whatever's left of the Activity
-        // History card's own height, so a long title or a busy activities table
-        // can't balloon the calendar past a normal card size — it scrolls
-        // internally instead.
+        // Even out the dashboard columns against the Quick Actions + Activity
+        // History stack (the one predictable height on the page): grow the trend
+        // chart to fill the left column's shortfall with real chart content, and
+        // either pad or clamp the calendar card to the same target — padded when
+        // its natural content falls short, clamped with an internal scroll when a
+        // long title or a busy activities table would otherwise balloon it taller
+        // than a normal card.
         const trendBaseHeight = 230;
         function alignDashboardColumns() {
             const left = document.getElementById('tm-leftcol');
             const qa = document.getElementById('tm-qa');
             if (!left || !qa || !calCard) return;
             const midStack = qa.closest('.tm-stack');
-            const historyCard = document.getElementById('tm-activity-feed').closest('.tm-card');
 
+            calCard.style.paddingBottom = '';
             agendaEl.style.maxHeight = '';
             agendaEl.style.overflowY = '';
             if (window.__tmTrendChart) window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight } }, false, false);
 
+            // Below 1100px the columns stack into one — nothing to even out.
+            if (window.innerWidth <= 1100) return;
+
             requestAnimationFrame(() => {
-                // Below 1100px the columns stack into one — just clamp, don't stretch.
-                if (window.innerWidth > 1100) {
-                    const leftShort = midStack.offsetHeight - left.offsetHeight;
-                    if (leftShort > 4 && window.__tmTrendChart) {
-                        window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight + leftShort } }, false, false);
-                    }
+                const target = midStack.offsetHeight;
+
+                const leftShort = target - left.offsetHeight;
+                if (leftShort > 4 && window.__tmTrendChart) {
+                    window.__tmTrendChart.updateOptions({ chart: { height: trendBaseHeight + leftShort } }, false, false);
                 }
 
                 const chrome = calCard.offsetHeight - agendaEl.offsetHeight; // nav + grid + legend + card padding
-                const budget = historyCard.offsetHeight - chrome;
-                if (budget > 40 && agendaEl.scrollHeight > budget) {
+                const calShort = target - calCard.offsetHeight;
+                if (calShort > 4) {
+                    calCard.style.paddingBottom = (20 + calShort) + 'px';
+                } else if (calShort < -4) {
+                    const budget = Math.max(target - chrome, 80);
                     agendaEl.style.maxHeight = budget + 'px';
                     agendaEl.style.overflowY = 'auto';
                 }

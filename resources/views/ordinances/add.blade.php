@@ -131,10 +131,10 @@
                             <input type="hidden" name="supporting_document_ordinance_id" value="{{ $info->id ?? '' }}">
                             <label class="tm-label">Supporting Documents <small class="tm-muted">Uploads save automatically.</small></label>
                             <div class="multiple-file-upload">
-                                <input type="file" class="filepond file-upload-multiple" name="files[]" id="filepond" multiple data-allow-reorder="true" data-max-file-size="3MB" data-max-files="5">
+                                <input type="file" class="filepond file-upload-multiple" name="filepond" id="filepond" multiple data-allow-reorder="true" data-max-file-size="3MB" data-max-files="5">
                             </div>
                         </form>
-                        <ul class="list-group mt-2">
+                        <ul class="list-group mt-2" id="supporting-documents-list">
                             @foreach($all_documents ?? [] as $item)
                                 <li class="list-group-item">
                                     <a href="{{ url('ordinances/delete_uploaded_file_view/'.$item->id) }}" onclick="return confirm('Are you sure you want to delete this file?')" title="Delete File" class="me-2 text-danger"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
@@ -264,6 +264,46 @@
                 headers: {
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
+            },
+            onprocessfile: function (error, file) {
+                if (!error) refreshSupportingDocuments(resId);
+            }
+        });
+    }
+
+    // Re-fetch the supporting-document list so newly uploaded files show up
+    // without requiring a page reload.
+    function refreshSupportingDocuments(resId) {
+        $.ajax({
+            type: 'POST',
+            data: { ordinance_id: resId },
+            dataType: 'json',
+            url: '{{ url("ordinances/get_uploaded_files") }}',
+            success: function (data) {
+                const ul = document.getElementById('supporting-documents-list');
+                ul.innerHTML = '';
+                (data['rows'] || []).forEach(item => {
+                    const li = document.createElement('li');
+                    li.classList.add('list-group-item');
+
+                    const del = document.createElement('a');
+                    del.href = "{{ url('ordinances/delete_uploaded_file_view') }}/" + item.id;
+                    del.title = 'Delete File';
+                    del.classList.add('me-2', 'text-danger');
+                    del.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+                    del.onclick = function (event) {
+                        if (!confirm('Are you sure you want to delete this file?')) event.preventDefault();
+                    };
+
+                    const view = document.createElement('a');
+                    view.href = "{{ url('uploads_ordinances') }}/" + item.filename;
+                    view.target = '_blank';
+                    view.textContent = item.filename.substring(11);
+
+                    li.appendChild(del);
+                    li.appendChild(view);
+                    ul.appendChild(li);
+                });
             }
         });
     }

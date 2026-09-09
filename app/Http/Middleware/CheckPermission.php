@@ -16,6 +16,10 @@ class CheckPermission
     {
         $user = Auth::user();
 
+        if (!$user) {
+            return redirect()->route('login');
+        }
+
         if ($user->account_type === "ADMINISTRATOR" || $user->account_type === "SUPER ADMIN") {
             return $next($request);
         }

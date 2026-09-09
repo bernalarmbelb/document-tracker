@@ -39,7 +39,7 @@ class OrdinancesController extends Controller
             return $next($request);
         });
 
-        $this->middleware('permission:View Ordinances')->only(['list', 'list_filter', 'view', 'view_ordinance', 'generate_pdf', 'print_list', 'get_uploaded_files']);
+        $this->middleware('permission:View Ordinances')->only(['list', 'list_filter', 'view', 'generate_pdf', 'print_list', 'get_uploaded_files']);
         $this->middleware('permission:Add Ordinance')->only(['add', 'save_add', 'upload_supporting_documents', 'upload_supporting_documents_single']);
         $this->middleware('permission:Edit Ordinance')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Ordinance')->only(['delete', 'move_to_archive']);
@@ -318,8 +318,9 @@ class OrdinancesController extends Controller
             log_activity('Add Supporting Documents - Ordinance', json_encode($data));   
 
             return response()->json(['path' => $path]);
-           
-        }       
+        }
+
+        return response()->json(['error' => 'No file received.'], 422);
     }
 
     public function upload_supporting_documents_single(Request $request)

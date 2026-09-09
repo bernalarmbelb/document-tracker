@@ -40,7 +40,7 @@ class ResolutionsController extends Controller
             return $next($request);
         });
 
-        $this->middleware('permission:View Resolutions')->only(['list', 'list_filter', 'view', 'view_resolution', 'generate_pdf', 'print_list', 'get_uploaded_files']);
+        $this->middleware('permission:View Resolutions')->only(['list', 'list_filter', 'view', 'generate_pdf', 'print_list', 'get_uploaded_files']);
         $this->middleware('permission:Add Resolution')->only(['add', 'save_add', 'upload_supporting_documents', 'upload_supporting_documents_single']);
         $this->middleware('permission:Edit Resolution')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Resolution')->only(['delete', 'move_to_archive']);
@@ -396,11 +396,13 @@ class ResolutionsController extends Controller
                 'filename'=> $filename,
                 'resolution_id' => $request->resolution_id,
             ];
-            ResolutionsDocuments::create($data);                 
-            log_activity('Add Supporting Documents - Resolution', json_encode($data));    
+            ResolutionsDocuments::create($data);
+            log_activity('Add Supporting Documents - Resolution', json_encode($data));
 
-            return response()->json(['path' => $path]);           
-        }       
+            return response()->json(['path' => $path]);
+        }
+
+        return response()->json(['error' => 'No file received.'], 422);
     }
 
     public function upload_supporting_documents_single(Request $request)
