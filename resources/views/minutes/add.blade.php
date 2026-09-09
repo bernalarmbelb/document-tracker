@@ -132,7 +132,7 @@
                             <input type="hidden" name="supporting_document_minute_id" value="{{ $info->id ?? '' }}">
                             <label class="tm-label">Supporting Documents <small class="tm-muted">Uploads save automatically.</small></label>
                             <div class="multiple-file-upload">
-                                <input type="file" class="filepond file-upload-multiple" name="files[]" id="filepond" multiple data-allow-reorder="true" data-max-file-size="3MB" data-max-files="5">
+                                <input type="file" class="filepond file-upload-multiple" name="files[]" id="filepond" multiple data-allow-reorder="true" data-max-file-size="100MB" data-max-files="5">
                             </div>
                         </form>
                         <ul class="list-group mt-2">
