@@ -57,7 +57,7 @@
 <script src="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.min.js") }}"></script>
 <script src="{{ asset("js/app.js") }}"></script>
 <script>
-    tmInitDataTable('#zero-config', { pageLength: 10, searchPlaceholder: 'Search archive...', order: [[1, 'desc']], columnDefs: [{ orderable: false, targets: [7] }] });
+    tmInitDataTable('#zero-config', { pageLength: 10, searchPlaceholder: 'Search archive...', order: [[1, 'desc']], columnDefs: [{ orderable: false, targets: [7] }, { type: 'tm-series', targets: [0] }] });
     (function () {
         var menu = document.getElementById('tm-row-menu'); if (!menu) return;
         var curId = null, viewBase = "{{ url('minutes/view') }}", unarchiveBase = "{{ url('archive/minutes_unarchive') }}";

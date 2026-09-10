@@ -147,6 +147,7 @@ Route::middleware('auth')->group(function () {
     
     //GLOBAL SEARCH
     Route::post('/global_search', [SearchController::class, 'global_search'])->name("search.global_search");
+    Route::get('/global_search', [SearchController::class, 'results'])->name("search.results");
     Route::post('/global_search/clear', [SearchController::class, 'clear'])->name("search.clear");
 
     //SIGNATORIES

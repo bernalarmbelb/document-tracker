@@ -64,7 +64,7 @@
 <script src="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.min.js") }}"></script>
 <script src="{{ asset("js/app.js") }}"></script>
 <script>
-    tmInitDataTable('#zero-config', { pageLength: 10, searchPlaceholder: 'Search archive...', order: [[1, 'desc']], columnDefs: [{ orderable: false, targets: [11] }] });
+    tmInitDataTable('#zero-config', { pageLength: 10, searchPlaceholder: 'Search archive...', order: [[1, 'desc']], columnDefs: [{ orderable: false, targets: [11] }, { type: 'tm-series', targets: [0] }] });
     (function () {
         var menu = document.getElementById('tm-row-menu'); if (!menu) return;
         var curId = null, viewBase = "{{ url('ordinances/view') }}", unarchiveBase = "{{ url('archive/ordinances_unarchive') }}";

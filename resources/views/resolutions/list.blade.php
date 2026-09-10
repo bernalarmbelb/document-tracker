@@ -191,7 +191,7 @@
         pageLength: 10,
         searchPlaceholder: 'Search resolutions...',
         order: [[5, 'desc']],
-        columnDefs: [{ orderable: false, targets: [15] }]
+        columnDefs: [{ orderable: false, targets: [15] }, { type: 'tm-series', targets: [0] }]
     });
 
     // Row click -> floating action menu

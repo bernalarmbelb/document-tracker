@@ -117,7 +117,7 @@
         pageLength: 10,
         searchPlaceholder: 'Filter minutes...',
         order: [[1, 'desc']],
-        columnDefs: [{ orderable: false, targets: [6] }]
+        columnDefs: [{ orderable: false, targets: [6] }, { type: 'tm-series', targets: [0] }]
     });
 
     // Row click -> floating action menu

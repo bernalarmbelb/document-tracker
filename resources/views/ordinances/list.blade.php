@@ -175,7 +175,7 @@
         pageLength: 10,
         searchPlaceholder: 'Search ordinances...',
         order: [[1, 'desc']],
-        columnDefs: [{ orderable: false, targets: [12] }]
+        columnDefs: [{ orderable: false, targets: [12] }, { type: 'tm-series', targets: [0] }]
     });
 
     // Row click -> floating action menu

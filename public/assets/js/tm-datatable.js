@@ -14,6 +14,56 @@
    ============================================================================ */
 (function () {
     var seq = 0;
+    var seriesSortRegistered = false;
+
+    /* -----------------------------------------------------------------------
+       Custom "series number" sort type — the counter resets every year, so a
+       plain string sort groups by the leading digits across years instead of
+       year-then-number within that year. The format also isn't consistent:
+       resolutions/minutes use "NUMBER-YEAR" (e.g. "194-2024") but ordinances
+       use "YEAR-NUMBER" (e.g. "2024-01"), and minutes' own data has both.
+       So: whichever digit group is exactly 4 digits is the year, wherever it
+       sits — the other group is the number. Registered lazily from
+       tmInitDataTable (below), since this file loads globally in
+       template.blade.php before the per-page DataTables library script does
+       — touching $.fn.dataTable up here would throw before it exists.
+       Opt a column in via columnDefs: [{ type: 'tm-series', targets: [0] }].
+    ----------------------------------------------------------------------- */
+    function registerSeriesSortType() {
+        if (seriesSortRegistered || !window.$ || !$.fn.dataTable) return;
+        seriesSortRegistered = true;
+        $.fn.dataTable.ext.type.order['tm-series-pre'] = function (data) {
+            var text = (data === null || data === undefined ? '' : data.toString()).replace(/<[^>]*>/g, '').trim();
+            if (text === '') return -Infinity;
+
+            var groups = text.match(/\d+/g);
+            if (!groups || groups.length < 2) {
+                var n = parseFloat(text.replace(/[^0-9.\-]/g, ''));
+                return isNaN(n) ? -Infinity : n;
+            }
+
+            var yearIdx = -1;
+            for (var i = 0; i < groups.length; i++) {
+                if (groups[i].length === 4) { yearIdx = i; break; }
+            }
+
+            var year, number;
+            if (yearIdx !== -1) {
+                year = parseInt(groups[yearIdx], 10);
+                number = null;
+                for (var j = 0; j < groups.length; j++) {
+                    if (j !== yearIdx) { number = parseInt(groups[j], 10); break; }
+                }
+            } else {
+                // No clean 4-digit year (e.g. a truncated "066-20") — best
+                // effort, assume the more common NUMBER-YEAR order.
+                number = parseInt(groups[0], 10);
+                year = parseInt(groups[1], 10);
+            }
+
+            return (year * 100000) + number;
+        };
+    }
 
     /* -----------------------------------------------------------------------
        Custom dropdown: markup <div class="tm-dd" data-tm-dropdown [data-tm-submit]>
@@ -146,6 +196,7 @@
 
     window.tmInitDataTable = function (selector, opts) {
         opts = opts || {};
+        registerSeriesSortType();
 
         var placeholder = opts.searchPlaceholder || 'Search...';
         var pageLength = opts.pageLength || 10;
