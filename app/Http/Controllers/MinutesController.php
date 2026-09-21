@@ -33,7 +33,7 @@ class MinutesController extends Controller
             return $next($request);
         });
 
-        $this->middleware('permission:View Minutes')->only(['list', 'list_grid', 'attendance_report', 'view', 'view_minute', 'generate_pdf', 'search', 'search_grid', 'get_uploaded_files']);
+        $this->middleware('permission:View Minutes')->only(['list', 'list_grid', 'attendance_report', 'view', 'view_minute', 'generate_pdf', 'view_pdf', 'search', 'search_grid', 'get_uploaded_files']);
         $this->middleware('permission:Add Minute')->only(['add', 'save_add', 'upload_supporting_documents']);
         $this->middleware('permission:Edit Minute')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Minute')->only(['delete', 'move_to_archive']);
@@ -358,6 +358,16 @@ class MinutesController extends Controller
         echo json_encode($rows);
     }
 
+    public function view_pdf($transid)
+    {
+        $minute_info = Minutes::where('id', $transid)->first();
+
+        return view('pdf_viewer', [
+            'pdfSrc' => url('minutes/generate_pdf/'.$transid),
+            'title' => $minute_info->series_number ?? 'Minutes',
+        ]);
+    }
+
     public function generate_pdf($transid)
     {
         log_activity('Generate PDF - Minutes', $transid);   
@@ -404,7 +414,7 @@ class MinutesController extends Controller
                 ->orderBy('members.name')
                 ->get(['members.name', 'members.position', 'minutes_attendance.status']);
 
-            $tally = ['P' => 0, 'A' => 0, 'E' => 0, 'L' => 0];
+            $tally = ['P' => 0, 'A' => 0, 'OB' => 0, 'LV' => 0];
             foreach ($attendees as $a) {
                 if (isset($tally[$a->status])) $tally[$a->status]++;
             }
@@ -522,9 +532,9 @@ class MinutesController extends Controller
             fputcsv($out, ['Session type', $type === '' ? 'All types' : $type]);
             fputcsv($out, ['Sessions held', $summary['totals']['sessions']]);
             fputcsv($out, []);
-            fputcsv($out, ['Member', 'Position', 'Present', 'Late', 'Excused', 'Absent', 'Present rate %']);
+            fputcsv($out, ['Member', 'Position', 'Present', 'Leave', 'Official Business', 'Absent', 'Present rate %']);
             foreach ($summary['members'] as $m) {
-                fputcsv($out, [$safe($m['name']), $safe($m['position']), $m['P'], $m['L'], $m['E'], $m['A'], $m['present_rate']]);
+                fputcsv($out, [$safe($m['name']), $safe($m['position']), $m['P'], $m['LV'], $m['OB'], $m['A'], $m['present_rate']]);
             }
             fclose($out);
         };

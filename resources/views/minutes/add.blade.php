@@ -98,7 +98,7 @@
                                                         <div class="tm-muted" style="font-size:12px">{{ $m->position }}</div>
                                                     </td>
                                                     <td style="text-align:right;white-space:nowrap">
-                                                        @foreach(['P'=>'Present','A'=>'Absent','E'=>'Excused','L'=>'Late'] as $code => $lbl)
+                                                        @foreach(['P'=>'Present','A'=>'Absent','OB'=>'Official Business','LV'=>'Leave'] as $code => $lbl)
                                                             <label class="att-opt" title="{{ $lbl }}">
                                                                 <input type="radio" name="att[{{ $m->id }}]" value="{{ $code }}" {{ $sel === $code ? 'checked' : '' }}> {{ $code }}
                                                             </label>
@@ -132,7 +132,7 @@
                             <input type="hidden" name="supporting_document_minute_id" value="{{ $info->id ?? '' }}">
                             <label class="tm-label">Supporting Documents <small class="tm-muted">Uploads save automatically.</small></label>
                             <div class="multiple-file-upload tm-upload-inline">
-                                <input type="file" class="filepond file-upload-multiple" name="files[]" id="filepond" multiple data-allow-reorder="true" data-max-file-size="100MB" data-max-files="5">
+                                <input type="file" class="filepond file-upload-multiple" name="filepond" id="filepond" multiple data-allow-reorder="true" data-max-file-size="100MB" data-max-files="5">
                             </div>
                         </form>
                         <ul class="tm-doclist mt-2">

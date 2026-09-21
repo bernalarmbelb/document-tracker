@@ -42,8 +42,8 @@
         <div class="row g-3 mt-1">
             <div class="col-6 col-md"><div class="tm-card text-center"><div style="font-size:24px;font-weight:800">{{ $summary['totals']['sessions'] }}</div><div class="tm-muted" style="font-size:12px">Sessions held</div></div></div>
             <div class="col-6 col-md"><div class="tm-card text-center"><div style="font-size:24px;font-weight:800">{{ $summary['totals']['P'] }}</div><div class="tm-muted" style="font-size:12px">Total Present</div></div></div>
-            <div class="col-6 col-md"><div class="tm-card text-center"><div style="font-size:24px;font-weight:800">{{ $summary['totals']['L'] }}</div><div class="tm-muted" style="font-size:12px">Total Late</div></div></div>
-            <div class="col-6 col-md"><div class="tm-card text-center"><div style="font-size:24px;font-weight:800">{{ $summary['totals']['E'] }}</div><div class="tm-muted" style="font-size:12px">Total Excused</div></div></div>
+            <div class="col-6 col-md"><div class="tm-card text-center"><div style="font-size:24px;font-weight:800">{{ $summary['totals']['LV'] }}</div><div class="tm-muted" style="font-size:12px">Total Leave</div></div></div>
+            <div class="col-6 col-md"><div class="tm-card text-center"><div style="font-size:24px;font-weight:800">{{ $summary['totals']['OB'] }}</div><div class="tm-muted" style="font-size:12px">Total Official Business</div></div></div>
             <div class="col-6 col-md"><div class="tm-card text-center"><div style="font-size:24px;font-weight:800">{{ $summary['totals']['A'] }}</div><div class="tm-muted" style="font-size:12px">Total Absent</div></div></div>
         </div>
 
@@ -56,8 +56,8 @@
                     <thead>
                         <tr>
                             <th>Member</th><th>Position</th>
-                            <th style="text-align:center">Present</th><th style="text-align:center">Late</th>
-                            <th style="text-align:center">Excused</th><th style="text-align:center">Absent</th>
+                            <th style="text-align:center">Present</th><th style="text-align:center">Leave</th>
+                            <th style="text-align:center">Official Business</th><th style="text-align:center">Absent</th>
                             <th style="text-align:center">Present rate</th>
                         </tr>
                     </thead>
@@ -67,8 +67,8 @@
                                 <td style="font-weight:600">{{ $m['name'] }}</td>
                                 <td class="tm-muted">{{ $m['position'] }}</td>
                                 <td style="text-align:center">{{ $m['P'] }}</td>
-                                <td style="text-align:center">{{ $m['L'] }}</td>
-                                <td style="text-align:center">{{ $m['E'] }}</td>
+                                <td style="text-align:center">{{ $m['LV'] }}</td>
+                                <td style="text-align:center">{{ $m['OB'] }}</td>
                                 <td style="text-align:center">{{ $m['A'] }}</td>
                                 <td style="text-align:center;font-weight:700;{{ $m['present_rate'] < 75 ? 'color:#C0392B' : '' }}">{{ $m['present_rate'] }}%</td>
                             </tr>

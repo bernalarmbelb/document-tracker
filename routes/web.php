@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/resolutions/delete/{id}', [ResolutionsController::class, 'delete'])->name("resolutions.delete");
     Route::get('/resolutions/move_to_archive/{id}', [ResolutionsController::class, 'move_to_archive'])->name("resolutions.move_to_archive");
     Route::get('/resolutions/generate_pdf/{id}', [ResolutionsController::class, 'generate_pdf'])->name("resolutions.generate_pdf");
+    Route::get('/resolutions/view_pdf/{id}', [ResolutionsController::class, 'view_pdf'])->name("resolutions.view_pdf");
     Route::post('/resolutions/get_uploaded_files', [ResolutionsController::class, 'get_uploaded_files'])->name("resolutions.get_uploaded_files");
     Route::get('/resolutions/delete_uploaded_file/{id}', [ResolutionsController::class, 'delete_uploaded_file'])->name("resolutions.delete_uploaded_file");
     Route::get('/resolutions/delete_uploaded_file_view/{id1}', [ResolutionsController::class, 'delete_uploaded_file_view'])->name("resolutions.delete_uploaded_file_view");
@@ -57,6 +58,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/ordinances/delete/{id}', [OrdinancesController::class, 'delete'])->name("ordinances.delete");
     Route::get('/ordinances/move_to_archive/{id}', [OrdinancesController::class, 'move_to_archive'])->name("ordinances.move_to_archive");
     Route::get('/ordinances/generate_pdf/{id}', [OrdinancesController::class, 'generate_pdf'])->name("ordinances.generate_pdf");
+    Route::get('/ordinances/view_pdf/{id}', [OrdinancesController::class, 'view_pdf'])->name("ordinances.view_pdf");
     Route::post('/ordinances/get_uploaded_files', [OrdinancesController::class, 'get_uploaded_files'])->name("ordinances.get_uploaded_files");
     Route::get('/ordinances/delete_uploaded_file/{id}', [OrdinancesController::class, 'delete_uploaded_file'])->name("ordinances.delete_uploaded_file");
     Route::get('/ordinances/delete_uploaded_file_view/{id2}', [OrdinancesController::class, 'delete_uploaded_file_view'])->name("ordinances.delete_uploaded_file_view");
@@ -83,6 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/minutes/delete/{id}', [MinutesController::class, 'delete'])->name("minutes.delete");
     Route::get('/minutes/move_to_archive/{id}', [MinutesController::class, 'move_to_archive'])->name("minutes.move_to_archive");
     Route::get('/minutes/generate_pdf/{id}', [MinutesController::class, 'generate_pdf'])->name("minutes.generate_pdf");
+    Route::get('/minutes/view_pdf/{id}', [MinutesController::class, 'view_pdf'])->name("minutes.view_pdf");
     Route::get('/minutes/delete_uploaded_file_view/{id1}', [MinutesController::class, 'delete_uploaded_file_view'])->name("minutes.delete_uploaded_file_view");
 
     Route::post('/minutes/save_add', [MinutesController::class, 'save_add'])->name("minutes.save_add");

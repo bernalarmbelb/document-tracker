@@ -27,7 +27,7 @@
             </tr>
         </thead>
         <tbody>
-            @php $statusLabel = ['P'=>'Present','A'=>'Absent','E'=>'Excused','L'=>'Late']; $i=1; @endphp
+            @php $statusLabel = ['P'=>'Present','A'=>'Absent','OB'=>'Official Business','LV'=>'Leave']; $i=1; @endphp
             @forelse($attendees as $a)
                 <tr>
                     <td style="text-align:center">{{ $i++ }}</td>
@@ -45,10 +45,10 @@
     <table style="width:100%;font-size:12px;margin-top:12px">
         <tr>
             <td><b>Present:</b> {{ $tally['P'] }}</td>
-            <td><b>Late:</b> {{ $tally['L'] }}</td>
-            <td><b>Excused:</b> {{ $tally['E'] }}</td>
+            <td><b>Leave:</b> {{ $tally['LV'] }}</td>
+            <td><b>Official Business:</b> {{ $tally['OB'] }}</td>
             <td><b>Absent:</b> {{ $tally['A'] }}</td>
-            <td><b>Total roster:</b> {{ $tally['P'] + $tally['A'] + $tally['E'] + $tally['L'] }}</td>
+            <td><b>Total roster:</b> {{ $tally['P'] + $tally['A'] + $tally['OB'] + $tally['LV'] }}</td>
         </tr>
     </table>
 

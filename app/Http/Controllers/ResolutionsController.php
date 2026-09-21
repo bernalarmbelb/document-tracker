@@ -40,7 +40,7 @@ class ResolutionsController extends Controller
             return $next($request);
         });
 
-        $this->middleware('permission:View Resolutions')->only(['list', 'list_filter', 'view', 'generate_pdf', 'print_list', 'get_uploaded_files']);
+        $this->middleware('permission:View Resolutions')->only(['list', 'list_filter', 'view', 'generate_pdf', 'view_pdf', 'print_list', 'get_uploaded_files']);
         $this->middleware('permission:Add Resolution')->only(['add', 'save_add', 'upload_supporting_documents', 'upload_supporting_documents_single']);
         $this->middleware('permission:Edit Resolution')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Resolution')->only(['delete', 'move_to_archive']);
@@ -431,6 +431,16 @@ class ResolutionsController extends Controller
             session()->flash('messages',$this->messages);
             return redirect()->route('resolutions.list');           
         }       
+    }
+
+    public function view_pdf($transid)
+    {
+        $resolution_info = Resolutions::where('id', $transid)->first();
+
+        return view('pdf_viewer', [
+            'pdfSrc' => url('resolutions/generate_pdf/'.$transid),
+            'title' => $resolution_info->series_number ?? 'Resolution',
+        ]);
     }
 
     public function generate_pdf($transid)

@@ -223,7 +223,7 @@
                                     @case('resolution')
                                         @php
                                             $viewUrl = url("resolutions/view/".$item->id);
-                                            $pdfUrl = url("resolutions/generate_pdf/".$item->id);
+                                            $pdfUrl = url("resolutions/view_pdf/".$item->id);
                                         @endphp
                                         <tr onclick="location.href='{{ $viewUrl }}'">
                                             <td><span class="tm-badge tm-badge-info">Resolution</span></td>
@@ -246,7 +246,7 @@
                                     @case('ordinance')
                                         @php
                                             $viewUrl = url("ordinances/view/".$item->id);
-                                            $pdfUrl = url("ordinances/generate_pdf/".$item->id);
+                                            $pdfUrl = url("ordinances/view_pdf/".$item->id);
                                         @endphp
                                         <tr onclick="location.href='{{ $viewUrl }}'">
                                             <td><span class="tm-badge tm-badge-sec">Ordinance</span></td>
@@ -331,7 +331,7 @@
                             @case('resolution')
                                 @php
                                     $viewUrl = url("resolutions/view/".$item->id);
-                                    $pdfUrl = url("resolutions/generate_pdf/".$item->id);
+                                    $pdfUrl = url("resolutions/view_pdf/".$item->id);
                                 @endphp
                                 <div class="tm-search-masonry-item">
                                     <div class="card style-4 tm-search-card" onclick="location.href='{{ $viewUrl }}'" tabindex="0" role="link" aria-label="View {{ $item->title }}">
@@ -379,7 +379,7 @@
                             @case('ordinance')
                                 @php
                                     $viewUrl = url("ordinances/view/".$item->id);
-                                    $pdfUrl = url("ordinances/generate_pdf/".$item->id);
+                                    $pdfUrl = url("ordinances/view_pdf/".$item->id);
                                 @endphp
                                 <div class="tm-search-masonry-item">
                                     <div class="card style-4 tm-search-card" onclick="location.href='{{ $viewUrl }}'" tabindex="0" role="link" aria-label="View {{ $item->short_title }}">

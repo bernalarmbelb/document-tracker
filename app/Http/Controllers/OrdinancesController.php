@@ -39,7 +39,7 @@ class OrdinancesController extends Controller
             return $next($request);
         });
 
-        $this->middleware('permission:View Ordinances')->only(['list', 'list_filter', 'view', 'generate_pdf', 'print_list', 'get_uploaded_files']);
+        $this->middleware('permission:View Ordinances')->only(['list', 'list_filter', 'view', 'generate_pdf', 'view_pdf', 'print_list', 'get_uploaded_files']);
         $this->middleware('permission:Add Ordinance')->only(['add', 'save_add', 'upload_supporting_documents', 'upload_supporting_documents_single']);
         $this->middleware('permission:Edit Ordinance')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Ordinance')->only(['delete', 'move_to_archive']);
@@ -349,6 +349,16 @@ class OrdinancesController extends Controller
             session()->flash('messages',$this->messages);
             return redirect()->route('ordinances.list');           
         }       
+    }
+
+    public function view_pdf($transid)
+    {
+        $ordinance_info = Ordinances::where('id', $transid)->first();
+
+        return view('pdf_viewer', [
+            'pdfSrc' => url('ordinances/generate_pdf/'.$transid),
+            'title' => $ordinance_info->series_number ?? 'Ordinance',
+        ]);
     }
 
     public function generate_pdf($transid)

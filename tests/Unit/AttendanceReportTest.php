@@ -19,7 +19,7 @@ class AttendanceReportTest extends TestCase
         $this->assertCount(2, $out['members']);
         $this->assertSame(0, $out['members'][0]['P']);
         $this->assertSame(0, $out['members'][0]['present_rate']);
-        $this->assertSame(['sessions' => 0, 'P' => 0, 'A' => 0, 'E' => 0, 'L' => 0], $out['totals']);
+        $this->assertSame(['sessions' => 0, 'P' => 0, 'A' => 0, 'OB' => 0, 'LV' => 0], $out['totals']);
     }
 
     public function test_counts_each_status_separately(): void
@@ -29,8 +29,8 @@ class AttendanceReportTest extends TestCase
             ['member_id' => 1, 'status' => 'P'],
             ['member_id' => 2, 'status' => 'P'],
             ['member_id' => 2, 'status' => 'A'],
-            ['member_id' => 2, 'status' => 'E'],
-            ['member_id' => 1, 'status' => 'L'],
+            ['member_id' => 2, 'status' => 'OB'],
+            ['member_id' => 1, 'status' => 'LV'],
         ];
 
         $out = AttendanceReport::summarize($rows, $this->members, 2);
@@ -38,18 +38,18 @@ class AttendanceReportTest extends TestCase
         $alice = $out['members'][0];
         $bob   = $out['members'][1];
 
-        $this->assertSame(['P' => 2, 'A' => 0, 'E' => 0, 'L' => 1], [
-            'P' => $alice['P'], 'A' => $alice['A'], 'E' => $alice['E'], 'L' => $alice['L'],
+        $this->assertSame(['P' => 2, 'A' => 0, 'OB' => 0, 'LV' => 1], [
+            'P' => $alice['P'], 'A' => $alice['A'], 'OB' => $alice['OB'], 'LV' => $alice['LV'],
         ]);
-        $this->assertSame(['P' => 1, 'A' => 1, 'E' => 1, 'L' => 0], [
-            'P' => $bob['P'], 'A' => $bob['A'], 'E' => $bob['E'], 'L' => $bob['L'],
+        $this->assertSame(['P' => 1, 'A' => 1, 'OB' => 1, 'LV' => 0], [
+            'P' => $bob['P'], 'A' => $bob['A'], 'OB' => $bob['OB'], 'LV' => $bob['LV'],
         ]);
 
         // present_rate = round(P / sessionCount * 100)
         $this->assertSame(100, $alice['present_rate']); // 2/2
         $this->assertSame(50, $bob['present_rate']);     // 1/2
 
-        $this->assertSame(['sessions' => 2, 'P' => 3, 'A' => 1, 'E' => 1, 'L' => 1], $out['totals']);
+        $this->assertSame(['sessions' => 2, 'P' => 3, 'A' => 1, 'OB' => 1, 'LV' => 1], $out['totals']);
     }
 
     public function test_present_rate_is_zero_when_no_sessions(): void
