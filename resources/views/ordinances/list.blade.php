@@ -24,26 +24,6 @@
                 <div class="tm-crumb"><a href="{{ url('ordinances/list') }}">Ordinances</a> / List</div>
             </div>
             <div class="d-flex align-items-center" style="gap:10px; flex-wrap:wrap">
-                <form method="post" action="{{ url('/ordinances/list_filter/') }}" id="frmviewrecords" style="margin:0">
-                    @csrf
-                    @php
-                        $currentLabel = 'All Status';
-                        foreach($all_statuses as $s){ if($s->status_code == $selected_status){ $currentLabel = $s->status_ordinance; break; } }
-                    @endphp
-                    <div class="tm-dd" data-tm-dropdown data-tm-submit>
-                        <button type="button" class="tm-dd-toggle">
-                            <span class="tm-dd-label">{{ $currentLabel }}</span>
-                            <svg class="tm-dd-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                        </button>
-                        <div class="tm-dd-menu">
-                            <a class="tm-dd-option {{ $selected_status=='ALL' ? 'active' : '' }}" data-value="ALL">All Status</a>
-                            @foreach($all_statuses as $item)
-                                <a class="tm-dd-option {{ $item->status_code==$selected_status ? 'active' : '' }}" data-value="{{ $item->status_code }}">{{ $item->status_ordinance }}</a>
-                            @endforeach
-                        </div>
-                        <input type="hidden" name="ordinance_status" value="{{ $selected_status }}">
-                    </div>
-                </form>
                 @if(Auth::user()->hasPermission('Add Ordinance'))
                     <a href="{{ url("/ordinances/add") }}" class="tm-btn tm-btn-secondary">＋ Add Ordinance</a>
                 @endif
@@ -118,6 +98,64 @@
     </div>
 </div>
 
+{{-- Filter bar — moved into the search card's .tm-dt-head by tmInitDataTable's
+     opts.filtersHtml (see script below). Status/Author/Year are server-side
+     (ordinances/list_filter), same as before; export (print_list) respects them too. --}}
+<template id="tm-ordinance-filters-template">
+    <form method="post" action="{{ url('/ordinances/list_filter/') }}" id="frmviewrecords" class="tm-dt-filters">
+        @csrf
+        @php
+            $statusLabel = 'All';
+            foreach($all_statuses as $s){ if($s->status_code == $selected_status){ $statusLabel = $s->status_ordinance; break; } }
+        @endphp
+        <div class="tm-dd" data-tm-dropdown data-tm-submit>
+            <button type="button" class="tm-dd-toggle">
+                <span class="tm-dd-label">Status: <b>{{ $statusLabel }}</b></span>
+                <svg class="tm-dd-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="tm-dd-menu">
+                <a class="tm-dd-option {{ $selected_status=='ALL' ? 'active' : '' }}" data-value="ALL">All</a>
+                @foreach($all_statuses as $item)
+                    <a class="tm-dd-option {{ $item->status_code==$selected_status ? 'active' : '' }}" data-value="{{ $item->status_code }}">{{ $item->status_ordinance }}</a>
+                @endforeach
+            </div>
+            <input type="hidden" name="ordinance_status" value="{{ $selected_status }}">
+        </div>
+
+        <div class="tm-dd" data-tm-dropdown data-tm-submit>
+            <button type="button" class="tm-dd-toggle">
+                <span class="tm-dd-label">Author: <b>{{ $selected_author=='ALL' ? 'All' : smart_title($selected_author) }}</b></span>
+                <svg class="tm-dd-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="tm-dd-menu">
+                <a class="tm-dd-option {{ $selected_author=='ALL' ? 'active' : '' }}" data-value="ALL">All</a>
+                @foreach($all_authors as $a)
+                    <a class="tm-dd-option {{ $a==$selected_author ? 'active' : '' }}" data-value="{{ $a }}">{{ smart_title($a) }}</a>
+                @endforeach
+            </div>
+            <input type="hidden" name="author" value="{{ $selected_author }}">
+        </div>
+
+        <div class="tm-dd" data-tm-dropdown data-tm-submit>
+            <button type="button" class="tm-dd-toggle">
+                <span class="tm-dd-label">Approved: <b>{{ $selected_year=='ALL' ? 'Any' : $selected_year }}</b></span>
+                <svg class="tm-dd-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="tm-dd-menu">
+                <a class="tm-dd-option {{ $selected_year=='ALL' ? 'active' : '' }}" data-value="ALL">Any</a>
+                @foreach($all_years as $y)
+                    <a class="tm-dd-option {{ (string)$y==(string)$selected_year ? 'active' : '' }}" data-value="{{ $y }}">{{ $y }}</a>
+                @endforeach
+            </div>
+            <input type="hidden" name="year" value="{{ $selected_year }}">
+        </div>
+
+        @if($selected_status!='ALL' || $selected_author!='ALL' || $selected_year!='ALL')
+            <a href="{{ url('/ordinances/list_filter_clear') }}" class="tm-dt-clear">Clear filters</a>
+        @endif
+    </form>
+</template>
+
 {{-- Row click context menu --}}
 <div id="tm-row-menu" class="tm-row-menu">
     @if(Auth::user()->hasPermission('Edit Ordinance'))
@@ -175,7 +213,8 @@
         pageLength: 10,
         searchPlaceholder: 'Search ordinances...',
         order: [[1, 'desc']],
-        columnDefs: [{ orderable: false, targets: [12] }, { type: 'tm-series', targets: [0] }]
+        columnDefs: [{ orderable: false, targets: [12] }, { type: 'tm-series', targets: [0] }],
+        filtersHtml: $('#tm-ordinance-filters-template').html()
     });
 
     // Row click -> floating action menu

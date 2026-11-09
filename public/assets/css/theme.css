@@ -371,9 +371,13 @@
 .dataTables_wrapper .tm-dt-head .dataTables_filter label { margin: 0; width: 100%; }
 .dataTables_wrapper .tm-dt-head .dataTables_filter input { width: 340px; max-width: 100%; margin: 0; }
 .tm-dt-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.tm-dt-filters .tm-dd-toggle { min-width: 0; padding: 7px 14px; font-size: 12.5px; border-radius: 20px; gap: 6px; }
-.tm-dt-filters .tm-dd-label { font-weight: 600; }
+.tm-dt-filters .tm-dd-toggle { min-width: 0; max-width: 220px; padding: 7px 14px; font-size: 12.5px; border-radius: 20px; gap: 6px; }
+.tm-dt-filters .tm-dd-label { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tm-dt-filters .tm-dd-label b { color: var(--tm-primary); font-weight: 700; }
+/* Long option text (e.g. combined author names) wraps instead of forcing
+   the menu wider than the viewport and running off the right edge. */
+.tm-dt-filters .tm-dd-menu { right: 0; left: auto; min-width: 240px; width: max-content; max-width: min(360px, calc(100vw - 24px)); }
+.tm-dt-filters .tm-dd-option { white-space: normal; }
 .tm-dt-filters .tm-dt-clear { font-size: 12px; font-weight: 700; color: var(--tm-muted); white-space: nowrap; }
 .tm-dt-filters .tm-dt-clear:hover { color: var(--tm-primary); }
 

@@ -22,10 +22,6 @@
                 <div class="tm-crumb"><a href="{{ url('minutes/list') }}">Minutes</a> / List</div>
             </div>
             <div class="d-flex align-items-center" style="gap:10px; flex-wrap:wrap">
-                <form action="{{ url('/minutes/search/') }}" method="post" autocomplete="off" style="margin:0">
-                    @csrf
-                    <input id="t-text" type="text" name="keyword" value="{{ $keyword }}" placeholder="Search minutes..." class="tm-input" style="width:240px" onkeydown="if(event.key === 'Enter') this.form.submit()">
-                </form>
                 @if(Auth::user()->hasPermission('Add Minute'))
                     <a href="{{ url("/minutes/add/1") }}" class="tm-btn tm-btn-primary">＋ Regular Session</a>
                     <a href="{{ url("/minutes/add/2") }}" class="tm-btn tm-btn-danger">＋ Committee Hearing</a>
@@ -83,6 +79,60 @@
     </div>
 </div>
 
+{{-- Filter bar — moved into the search card's .tm-dt-head by tmInitDataTable's
+     opts.filtersHtml (see script below). Category/Presiding Officer/Year are
+     server-side (minutes/list_filter), stored in session like the keyword search. --}}
+<template id="tm-minutes-filters-template">
+    <form method="post" action="{{ url('/minutes/list_filter/') }}" id="frmviewrecords" class="tm-dt-filters">
+        @csrf
+        <div class="tm-dd" data-tm-dropdown data-tm-submit>
+            <button type="button" class="tm-dd-toggle">
+                <span class="tm-dd-label">Category: <b>{{ $selected_category=='ALL' ? 'All' : $selected_category }}</b></span>
+                <svg class="tm-dd-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="tm-dd-menu">
+                <a class="tm-dd-option {{ $selected_category=='ALL' ? 'active' : '' }}" data-value="ALL">All</a>
+                @foreach($all_categories as $c)
+                    <a class="tm-dd-option {{ $c==$selected_category ? 'active' : '' }}" data-value="{{ $c }}">{{ $c }}</a>
+                @endforeach
+            </div>
+            <input type="hidden" name="category" value="{{ $selected_category }}">
+        </div>
+
+        <div class="tm-dd" data-tm-dropdown data-tm-submit>
+            <button type="button" class="tm-dd-toggle">
+                <span class="tm-dd-label">Presiding Officer: <b>{{ $selected_officer=='ALL' ? 'All' : smart_title($selected_officer) }}</b></span>
+                <svg class="tm-dd-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="tm-dd-menu">
+                <a class="tm-dd-option {{ $selected_officer=='ALL' ? 'active' : '' }}" data-value="ALL">All</a>
+                @foreach($all_officers as $o)
+                    <a class="tm-dd-option {{ $o==$selected_officer ? 'active' : '' }}" data-value="{{ $o }}">{{ smart_title($o) }}</a>
+                @endforeach
+            </div>
+            <input type="hidden" name="officer" value="{{ $selected_officer }}">
+        </div>
+
+        <div class="tm-dd" data-tm-dropdown data-tm-submit>
+            <button type="button" class="tm-dd-toggle">
+                <span class="tm-dd-label">Date: <b>{{ $selected_year=='ALL' ? 'Any' : $selected_year }}</b></span>
+                <svg class="tm-dd-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </button>
+            <div class="tm-dd-menu">
+                <a class="tm-dd-option {{ $selected_year=='ALL' ? 'active' : '' }}" data-value="ALL">Any</a>
+                @foreach($all_years as $y)
+                    <a class="tm-dd-option {{ (string)$y==(string)$selected_year ? 'active' : '' }}" data-value="{{ $y }}">{{ $y }}</a>
+                @endforeach
+            </div>
+            <input type="hidden" name="year" value="{{ $selected_year }}">
+        </div>
+
+        @if($selected_category!='ALL' || $selected_officer!='ALL' || $selected_year!='ALL')
+            <a href="{{ url('/minutes/list_filter_clear') }}" class="tm-dt-clear">Clear filters</a>
+        @endif
+    </form>
+</template>
+
 {{-- Row click context menu --}}
 <div id="tm-row-menu" class="tm-row-menu">
     @if(Auth::user()->hasPermission('Edit Minute'))
@@ -115,9 +165,10 @@
 
     tmInitDataTable('#zero-config', {
         pageLength: 10,
-        searchPlaceholder: 'Filter minutes...',
+        searchPlaceholder: 'Search minutes...',
         order: [[1, 'desc']],
-        columnDefs: [{ orderable: false, targets: [6] }, { type: 'tm-series', targets: [0] }]
+        columnDefs: [{ orderable: false, targets: [6] }, { type: 'tm-series', targets: [0] }],
+        filtersHtml: $('#tm-minutes-filters-template').html()
     });
 
     // Row click -> floating action menu

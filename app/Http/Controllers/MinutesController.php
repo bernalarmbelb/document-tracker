@@ -23,17 +23,23 @@ class MinutesController extends Controller
     public $edit = FALSE;
     public $messages = array();
     public $keyword = "";
+    public $selected_category = "ALL";
+    public $selected_officer = "ALL";
+    public $selected_year = "ALL";
 
     public function __construct()
     {
         $this->middleware(function ($request, $next)
         {
             if (session()->has('minutes_keyword')) $this->keyword = session('minutes_keyword');
+            if (session()->has('minutes_selected_category')) $this->selected_category = session('minutes_selected_category');
+            if (session()->has('minutes_selected_officer')) $this->selected_officer = session('minutes_selected_officer');
+            if (session()->has('minutes_selected_year')) $this->selected_year = session('minutes_selected_year');
 
             return $next($request);
         });
 
-        $this->middleware('permission:View Minutes')->only(['list', 'list_grid', 'attendance_report', 'view', 'view_minute', 'generate_pdf', 'view_pdf', 'search', 'search_grid', 'get_uploaded_files']);
+        $this->middleware('permission:View Minutes')->only(['list', 'list_filter', 'list_filter_clear', 'list_grid', 'attendance_report', 'view', 'view_minute', 'generate_pdf', 'view_pdf', 'search', 'search_grid', 'get_uploaded_files']);
         $this->middleware('permission:Add Minute')->only(['add', 'save_add', 'upload_supporting_documents']);
         $this->middleware('permission:Edit Minute')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Minute')->only(['delete', 'move_to_archive']);
@@ -45,17 +51,56 @@ class MinutesController extends Controller
         log_activity('View Minutes List');
         $myid = Auth::user()->id;         
         $keyword = $this->keyword;
-        $records = Minutes::where("is_deleted", 0)->where("is_archived", 0)->orderBy('date_created', 'desc')
-            ->whereRaw("(series_number like '%$keyword%' or short_description like '%$keyword%' or presiding_officer like '%$keyword%' or attendance like '%$keyword%' or agenda_1 like '%$keyword%' or agenda_2 like '%$keyword%' or agenda_3 like '%$keyword%' or agenda_4 like '%$keyword%' or agenda_5 like '%$keyword%')")->get();                
-                     
+        $query = Minutes::where("is_deleted", 0)->where("is_archived", 0)->orderBy('date_created', 'desc')
+            ->whereRaw("(series_number like '%$keyword%' or short_description like '%$keyword%' or presiding_officer like '%$keyword%' or attendance like '%$keyword%' or agenda_1 like '%$keyword%' or agenda_2 like '%$keyword%' or agenda_3 like '%$keyword%' or agenda_4 like '%$keyword%' or agenda_5 like '%$keyword%')");
+        if($this->selected_category!='ALL') $query = $query->where('category', $this->selected_category);
+        if($this->selected_officer!='ALL') $query = $query->where('presiding_officer', $this->selected_officer);
+        if($this->selected_year!='ALL') $query = $query->whereYear('date_created', $this->selected_year);
+        $records = $query->get();
+
+        $all_categories = Minutes::where("is_deleted", 0)->where("is_archived", 0)
+            ->whereNotNull('category')->where('category', '!=', '')
+            ->distinct()->orderBy('category')->pluck('category');
+        $all_officers = Minutes::where("is_deleted", 0)->where("is_archived", 0)
+            ->whereNotNull('presiding_officer')->where('presiding_officer', '!=', '')
+            ->distinct()->orderBy('presiding_officer')->pluck('presiding_officer');
+        $all_years = Minutes::where("is_deleted", 0)->where("is_archived", 0)
+            ->selectRaw('DISTINCT YEAR(date_created) as y')->orderByDesc('y')->pluck('y');
+
         $data = array(
             'menu' => 'Minutes',
             'records' => $records,
-          
-            'keyword' => $keyword,                             
+
+            'keyword' => $keyword,
+            'all_categories' => $all_categories,
+            'selected_category' => $this->selected_category,
+            'all_officers' => $all_officers,
+            'selected_officer' => $this->selected_officer,
+            'all_years' => $all_years,
+            'selected_year' => $this->selected_year,
         );
 
         return view("minutes.list", $data);
+    }
+
+    public function list_filter(Request $request)
+    {
+        $data = $request->all();
+        $this->selected_category = $data['category'] ?? 'ALL';
+        $this->selected_officer = $data['officer'] ?? 'ALL';
+        $this->selected_year = $data['year'] ?? 'ALL';
+
+        session(['minutes_selected_category' => $this->selected_category]);
+        session(['minutes_selected_officer' => $this->selected_officer]);
+        session(['minutes_selected_year' => $this->selected_year]);
+
+        return $this->list();
+    }
+
+    public function list_filter_clear()
+    {
+        session()->forget(['minutes_selected_category', 'minutes_selected_officer', 'minutes_selected_year']);
+        return redirect()->route('minutes.list');
     }
 
     public function list_grid()

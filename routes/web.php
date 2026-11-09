@@ -53,6 +53,7 @@ Route::middleware('auth')->group(function () {
     //ORDINANCES
     Route::get('/ordinances/list', [OrdinancesController::class, 'list'])->name("ordinances.list");
     Route::post('/ordinances/list_filter', [OrdinancesController::class, 'list_filter'])->name("ordinances.list_filter");
+    Route::get('/ordinances/list_filter_clear', [OrdinancesController::class, 'list_filter_clear'])->name("ordinances.list_filter_clear");
     Route::get('/ordinances/add', [OrdinancesController::class, 'add'])->name("ordinances.add");
     Route::get('/ordinances/edit/{id}', [OrdinancesController::class, 'edit'])->name("ordinances.edit");
     Route::get('/ordinances/view/{id}', [OrdinancesController::class, 'view'])->name("ordinances.view");
@@ -78,6 +79,8 @@ Route::middleware('auth')->group(function () {
    
     //MINUTES
     Route::get('/minutes/list', [MinutesController::class, 'list'])->name("minutes.list");
+    Route::post('/minutes/list_filter', [MinutesController::class, 'list_filter'])->name("minutes.list_filter");
+    Route::get('/minutes/list_filter_clear', [MinutesController::class, 'list_filter_clear'])->name("minutes.list_filter_clear");
     Route::get('/minutes/list_grid', [MinutesController::class, 'list_grid'])->name("minutes.list_grid");
     Route::get('/minutes/attendance_report', [MinutesController::class, 'attendance_report'])->name('minutes.attendance_report');
     Route::get('/minutes/add/{id}', [MinutesController::class, 'add'])->name("minutes.add");
