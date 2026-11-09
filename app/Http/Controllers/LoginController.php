@@ -105,9 +105,13 @@ class LoginController extends Controller
         $ordByMonth = Ordinances::where('is_deleted', 0)
             ->whereYear('date_created', $trend_year)
             ->selectRaw('MONTH(date_created) m, COUNT(*) c')->groupBy('m')->pluck('c', 'm');
+        $minByMonth = Minutes::where('is_deleted', 0)
+            ->whereYear('date_created', $trend_year)
+            ->selectRaw('MONTH(date_created) m, COUNT(*) c')->groupBy('m')->pluck('c', 'm');
         $monthly_labels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        $monthly_counts = collect(range(1, 12))
-            ->map(fn ($m) => (int) ($resByMonth[$m] ?? 0) + (int) ($ordByMonth[$m] ?? 0))->all();
+        $monthly_resolutions = collect(range(1, 12))->map(fn ($m) => (int) ($resByMonth[$m] ?? 0))->all();
+        $monthly_ordinances = collect(range(1, 12))->map(fn ($m) => (int) ($ordByMonth[$m] ?? 0))->all();
+        $monthly_minutes = collect(range(1, 12))->map(fn ($m) => (int) ($minByMonth[$m] ?? 0))->all();
 
         // All documents (resolutions + ordinances), newest first — paginated in the view via DataTables
         $documents = $merged->sortByDesc(fn ($r) => $r->date_created)->values();
@@ -158,7 +162,9 @@ class LoginController extends Controller
             'activities_ctr' => $activities_ctr,
             'calendar_activities' => $calendar_activities,
             'monthly_labels' => $monthly_labels,
-            'monthly_counts' => $monthly_counts,
+            'monthly_resolutions' => $monthly_resolutions,
+            'monthly_ordinances' => $monthly_ordinances,
+            'monthly_minutes' => $monthly_minutes,
             'trend_year' => $trend_year,
             'documents' => $documents,
             'activity_feed' => $activity_feed,

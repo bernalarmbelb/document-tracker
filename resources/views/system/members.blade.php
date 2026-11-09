@@ -1,6 +1,7 @@
 @extends("template",['menu' => $menu])
 
 @section("additional_head")
+<link rel="stylesheet" type="text/css" href="{{ asset("assets/src/plugins/src/table/datatable/datatables.css") }}">
 <link rel="stylesheet" href="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.css") }}">
 <link href="{{ asset("assets/src/plugins/css/light/sweetalerts2/custom-sweetalert.css") }}" rel="stylesheet" type="text/css" />
 @endsection
@@ -17,7 +18,7 @@
 
         <div class="row g-3">
             <div class="col-lg-5">
-                <div class="tm-card">
+                <div class="tm-card tm-sticky-card">
                     <h3 id="frmtitle">Add Member</h3>
                     <form class="row g-3" method="post" id="frmmember"
                           action="{{ url('/members/save_add') }}">
@@ -40,42 +41,36 @@
             </div>
 
             <div class="col-lg-7">
-                <div class="tm-card">
-                    <div style="margin-bottom:12px">
-                        <input type="text" id="memberSearch" class="tm-input" placeholder="Search by name or position..." autocomplete="off">
-                    </div>
-                    <div class="tm-table-wrap">
-                        <table class="tm-table" id="memberTable" style="width:100%">
-                            <thead>
-                                <tr><th>Name</th><th>Position</th><th style="text-align:center">Status</th><th style="text-align:center">Actions</th></tr>
-                            </thead>
-                            <tbody>
-                                @forelse($records as $item)
-                                    <tr>
-                                        <td>{{ $item->name }}</td>
-                                        <td>{{ $item->position }}</td>
-                                        <td class="text-center">
-                                            @if($item->is_deleted)
-                                                <span class="tm-badge">Hidden</span>
-                                            @else
-                                                <span class="tm-badge tm-badge-info">Active</span>
-                                            @endif
-                                        </td>
-                                        <td class="text-center">
-                                            <a href="#" class="me-2 tm-edit"
-                                               data-id="{{ $item->id }}" data-name="{{ $item->name }}" data-position="{{ $item->position }}">Edit</a>
-                                            <a href="{{ url('members/toggle_visibility/'.$item->id) }}"
-                                               onclick="return confirm('Toggle visibility for this member?')">
-                                               {{ $item->is_deleted ? 'Unhide' : 'Hide' }}</a>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr><td colspan="4" class="tm-table-empty">No members yet. Add office / LGU staff on the left.</td></tr>
-                                @endforelse
-                                <tr id="memberNoMatch" style="display:none"><td colspan="4" class="tm-table-empty">No members match your search.</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="tm-table-card">
+                    <table class="tm-table" id="memberTable" style="width:100%">
+                        <thead>
+                            <tr><th>Name</th><th>Position</th><th style="text-align:center">Status</th><th style="text-align:center">Actions</th></tr>
+                        </thead>
+                        <tbody>
+                            @forelse($records as $item)
+                                <tr>
+                                    <td>{{ $item->name }}</td>
+                                    <td>{{ $item->position }}</td>
+                                    <td class="text-center">
+                                        @if($item->is_deleted)
+                                            <span class="tm-badge">Hidden</span>
+                                        @else
+                                            <span class="tm-badge tm-badge-info">Active</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="#" class="me-2 tm-edit"
+                                           data-id="{{ $item->id }}" data-name="{{ $item->name }}" data-position="{{ $item->position }}">Edit</a>
+                                        <a href="{{ url('members/toggle_visibility/'.$item->id) }}"
+                                           onclick="return confirm('Toggle visibility for this member?')">
+                                           {{ $item->is_deleted ? 'Unhide' : 'Hide' }}</a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="tm-table-empty">No members yet. Add office / LGU staff on the left.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -84,6 +79,7 @@
 @endsection
 
 @section("additional_footer")
+<script src="{{ asset("assets/src/plugins/src/table/datatable/datatables.js") }}"></script>
 <script src="{{ asset("assets/src/plugins/src/sweetalerts2/sweetalerts2.min.js") }}"></script>
 <script src="{{ asset("js/app.js") }}"></script>
 <script>
@@ -96,18 +92,6 @@
         })();
     };
 
-    document.querySelectorAll('.tm-edit').forEach(a => a.addEventListener('click', function (e) {
-        e.preventDefault();
-        document.getElementById('member_id').value = this.dataset.id;
-        document.getElementById('name').value = this.dataset.name;
-        document.getElementById('position').value = this.dataset.position;
-        document.getElementById('frmmember').setAttribute('action', '{{ url("/members/save_changes") }}');
-        document.getElementById('frmtitle').textContent = 'Edit Member';
-        document.getElementById('btnsubmit').textContent = 'Save Changes';
-        document.getElementById('btncancel').style.display = 'inline-block';
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }));
-
     document.getElementById('btncancel').addEventListener('click', function () {
         document.getElementById('frmmember').reset();
         document.getElementById('member_id').value = '';
@@ -117,25 +101,28 @@
         this.style.display = 'none';
     });
 
-    // Live search: filter member rows by name or position
-    (function () {
-        const search = document.getElementById('memberSearch');
-        if (!search) return;
-        const noMatch = document.getElementById('memberNoMatch');
-        const dataRows = Array.from(document.querySelectorAll('#memberTable tbody tr'))
-            .filter(r => r.id !== 'memberNoMatch' && !r.querySelector('.tm-table-empty'));
+    tmInitDataTable('#memberTable', {
+        pageLength: 10,
+        searchPlaceholder: 'Search by name or position...',
+        order: [[0, 'asc']],
+        columnDefs: [{ orderable: false, targets: [2, 3] }]
+    });
 
-        search.addEventListener('input', function () {
-            const q = this.value.trim().toLowerCase();
-            let visible = 0;
-            dataRows.forEach(r => {
-                const text = (r.children[0].textContent + ' ' + r.children[1].textContent).toLowerCase();
-                const show = q === '' || text.includes(q);
-                r.style.display = show ? '' : 'none';
-                if (show) visible++;
-            });
-            noMatch.style.display = (dataRows.length && visible === 0) ? '' : 'none';
-        });
-    })();
+    // Delegated on the table itself (not each .tm-edit link) since DataTables
+    // re-renders the tbody on every page/search — per-element listeners would
+    // only survive until the first redraw.
+    document.querySelector('#memberTable').addEventListener('click', function (e) {
+        const a = e.target.closest('.tm-edit');
+        if (!a) return;
+        e.preventDefault();
+        document.getElementById('member_id').value = a.dataset.id;
+        document.getElementById('name').value = a.dataset.name;
+        document.getElementById('position').value = a.dataset.position;
+        document.getElementById('frmmember').setAttribute('action', '{{ url("/members/save_changes") }}');
+        document.getElementById('frmtitle').textContent = 'Edit Member';
+        document.getElementById('btnsubmit').textContent = 'Save Changes';
+        document.getElementById('btncancel').style.display = 'inline-block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
 </script>
 @endsection

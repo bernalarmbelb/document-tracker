@@ -21,7 +21,7 @@
 
         @include('archive.partials.tabs', ['active' => 'resolutions'])
 
-        <div class="tm-card">
+        <div class="tm-table-card">
             <table id="zero-config" class="tm-table" style="width:100%">
                 <thead>
                     <tr>

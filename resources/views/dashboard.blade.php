@@ -265,6 +265,7 @@
             pageLength: 15,
             order: [[5, 'desc']],
             columnDefs: [{ orderable: false, targets: [0] }],
+            pagingType: 'simple',
             dom: "<'tm-dt-head'f>t<'tm-dt-foot'<'tm-dt-foot-left'i><'tm-dt-foot-right'p>>",
             language: {
                 search: '',
@@ -275,26 +276,9 @@
                 paginate: { previous: 'Previous', next: 'Next' }
             }
         });
-
-        // Custom "Rows per page" — a number input with suggestions (type any value).
-        var perPage = $(
-            '<div class="tm-perpage">' +
-                '<label for="tm-perpage-input">Rows per page</label>' +
-                '<input id="tm-perpage-input" class="tm-perpage-input" type="number" min="1" step="5" value="15" list="tm-perpage-list">' +
-                '<datalist id="tm-perpage-list">' +
-                    '<option value="10"></option><option value="15"></option><option value="25"></option>' +
-                    '<option value="50"></option><option value="100"></option>' +
-                '</datalist>' +
-            '</div>'
-        );
-        $('.tm-dt-foot-left').append(perPage);
-        function applyPerPage() {
-            var v = parseInt(perPage.find('.tm-perpage-input').val(), 10);
-            if (!v || v < 1) { v = 15; perPage.find('.tm-perpage-input').val(15); }
-            docsTable.page.len(v).draw();
-        }
-        perPage.find('.tm-perpage-input').on('change', applyPerPage);
-        perPage.find('.tm-perpage-input').on('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); applyPerPage(); } });
+        var docsWrapper = $('#documents-table').closest('.dataTables_wrapper');
+        window.tmAddPageInfo(docsTable, docsWrapper);
+        window.tmBuildRowsPerPage(docsTable, docsWrapper.find('.tm-dt-foot-left'), 15);
 
         // Click a row to open that document (works across pages via delegation).
         $('#documents-table tbody').on('click', 'tr', function () {
@@ -309,11 +293,17 @@
         const primary = '#427AB5', secondary = '#406AAF', accent = '#F7DD7D', dark = '#333', success = '#0FA958', warning = '#E84E46';
 
         const trendChart = new ApexCharts(document.querySelector('#trend'), {
-            chart: { type: 'bar', height: 230, fontFamily: font, toolbar: { show: false } },
-            series: [{ name: 'Documents', data: @json($monthly_counts) }],
+            chart: { type: 'bar', height: 230, fontFamily: font, toolbar: { show: false }, stacked: true },
+            series: [
+                { name: 'Resolutions', data: @json($monthly_resolutions) },
+                { name: 'Ordinances', data: @json($monthly_ordinances) },
+                { name: 'Minutes', data: @json($monthly_minutes) }
+            ],
             xaxis: { categories: @json($monthly_labels) },
-            colors: [primary], plotOptions: { bar: { borderRadius: 5, columnWidth: '55%' } },
-            dataLabels: { enabled: false }, grid: { borderColor: 'rgba(51,51,51,.08)' }
+            colors: [primary, secondary, accent],
+            plotOptions: { bar: { borderRadius: 6, borderRadiusApplication: 'end', borderRadiusWhenStacked: 'last', columnWidth: '45%' } },
+            dataLabels: { enabled: false }, grid: { borderColor: 'rgba(51,51,51,.08)' },
+            legend: { position: 'top', horizontalAlign: 'right', fontSize: '11px', markers: { shape: 'circle' } }
         });
         trendChart.render();
         window.__tmTrendChart = trendChart;

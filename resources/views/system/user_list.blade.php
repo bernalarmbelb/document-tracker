@@ -30,13 +30,14 @@
         </div>
 
         {{-- Table --}}
-        <div class="tm-card">
+        <div class="tm-table-card">
             <table id="zero-config" class="tm-table" style="width:100%">
                 <thead>
                     <tr>
                         <th>User</th>
                         <th>Email</th>
                         <th>Account Type</th>
+                        <th>System</th>
                         <th>Status</th>
                         <th>Date Added</th>
                         <th class="no-content">Actions</th>
@@ -56,6 +57,7 @@
                             </td>
                             <td>{{ $item->email }}</td>
                             <td><span class="tm-badge {{ $item->account_type=='ADMINISTRATOR' ? 'tm-badge-info' : 'tm-badge-warn' }}">{{ $item->account_type }}</span></td>
+                            <td><span class="tm-badge tm-badge-info">{{ strtoupper($item->source_system ?? 'doctracking') }}</span></td>
                             <td><span class="tm-badge {{ $item->status=='ACTIVE' ? 'tm-badge-ok' : 'tm-badge-bad' }}">{{ $item->status }}</span></td>
                             <td>{{ date("M d, Y h:iA", strtotime($item->created_at)) }}</td>
                             <td class="tm-actions-cell">
@@ -182,8 +184,8 @@
     tmInitDataTable('#zero-config', {
         pageLength: 10,
         searchPlaceholder: 'Search users...',
-        order: [[4, 'desc']],
-        columnDefs: [{ orderable: false, targets: [5] }]
+        order: [[5, 'desc']],
+        columnDefs: [{ orderable: false, targets: [6] }]
     });
 
     // Row click -> floating action menu

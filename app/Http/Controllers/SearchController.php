@@ -147,10 +147,10 @@ class SearchController extends Controller
         $query3 = Minutes::where("is_deleted", 0)->where("is_archived", 0);
         $query4 = Communications::where("is_deleted", 0)->where("is_archived", 0);
 
-        //SEARCH BY KEYWORD
+        //SEARCH BY KEYWORD (keywords_tags is a comma-separated list)
         $keywords = $this->search_keyword;
         if ($keywords !== '') {
-            $terms = explode(' ', $keywords);
+            $terms = array_filter(array_map('trim', explode(',', $keywords)), fn($t) => $t !== '');
             $query1->where(function ($q) use ($terms){
                 foreach ($terms as $term)
                     $q->orWhere('keywords_tags', 'LIKE', '%' . $term . '%');

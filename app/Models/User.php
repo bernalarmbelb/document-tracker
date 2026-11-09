@@ -19,9 +19,10 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
-        'account_type',        
-        'fullname',       
+        'account_type',
+        'fullname',
         'status',
+        'source_system',
         'added_by',
         'is_deleted',
         'is_archived'

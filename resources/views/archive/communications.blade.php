@@ -16,7 +16,7 @@
 
         @include('archive.partials.tabs', ['active' => 'communications'])
 
-        <div class="tm-card">
+        <div class="tm-table-card">
             <table id="zero-config" class="tm-table" style="width:100%">
                 <thead>
                     <tr><th>Date</th><th>Type</th><th>Source / Addressee</th><th>Particulars</th><th>Actions Taken</th><th>Received / Released By</th><th class="no-content">Actions</th></tr>

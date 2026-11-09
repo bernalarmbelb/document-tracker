@@ -16,7 +16,7 @@
 
         @include('archive.partials.tabs', ['active' => 'users'])
 
-        <div class="tm-card">
+        <div class="tm-table-card">
             <table id="zero-config" class="tm-table" style="width:100%">
                 <thead>
                     <tr><th>Username</th><th>Full Name</th><th>Email</th><th>Account Type</th><th class="no-content">Actions</th></tr>

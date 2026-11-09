@@ -59,6 +59,30 @@
 	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
 	font-family: var(--tm-font);
 }
+/* Pages that are a search/filter bar + table + pagination (DataTables via
+   tmInitDataTable) get TWO separate boxes, not one: the search bar in its
+   own card, the table+pagination in a second card below — rather than
+   everything floating inside one shared padded card. .tm-table-card itself
+   is just a layout container (the gap between the two boxes). */
+.tm-table-card { font-family: var(--tm-font); }
+.tm-table-card .tm-dt-head {
+	background: var(--tm-card);
+	border: 1px solid var(--tm-line);
+	border-radius: 12px;
+	padding: 14px 16px;
+	margin-bottom: 16px;
+}
+.tm-table-card .tm-dt-tablebox {
+	background: var(--tm-card);
+	border: 1px solid var(--tm-line);
+	border-radius: 12px;
+}
+/* DataTables ships table.dataTable { margin: 6px 0 !important }, which read
+   as a stray gap above/below the table now that this box has no padding
+   of its own to absorb it. */
+.tm-table-card .tm-dt-tablebox table.dataTable { margin: 0 !important; }
+.tm-table-card .tm-dt-tablebox .tm-dt-foot { padding: 0 16px 14px; }
+
 .tm-card > h3, .tm-card-title {
 	font-family: var(--tm-font-head);
 	font-size: 14px;
@@ -116,16 +140,25 @@
 	font-size: 10px;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
-	color: var(--tm-muted);
-	font-weight: 700;
-	padding: 9px 10px;
+	color: var(--tm-primary);
+	font-weight: 800;
+	padding: 12px 10px;
+	background: rgba(66, 122, 181, 0.08);
 	border-bottom: 1px solid var(--tm-line);
 	white-space: nowrap;
 }
-.tm-table td { padding: 9px 10px; border-bottom: 1px solid var(--tm-line); color: #333; vertical-align: middle; }
+.tm-table thead tr:first-child th:first-child { border-top-left-radius: 12px; }
+.tm-table thead tr:first-child th:last-child { border-top-right-radius: 12px; }
+.tm-table td { padding: 10px; border-bottom: 1px solid var(--tm-line); color: #333; vertical-align: middle; }
 .tm-table tbody tr:hover { background: rgba(66, 122, 181, 0.04); }
 .tm-table-empty { text-align: center; color: var(--tm-muted); padding: 32px; font-style: italic; }
 .tm-table-wrap { overflow-x: auto; border: 1px solid var(--tm-line); border-radius: 12px; background: var(--tm-card); }
+
+/* A side-by-side form card (e.g. Members' "Add Member") that should stay in
+   view while a taller list scrolls in the column next to it. 113px clears
+   the sticky top header + nav bar. */
+.tm-sticky-card { position: sticky; top: 113px; }
+@media (max-width: 991.98px) { .tm-sticky-card { position: static; } }
 
 /* ── Inline row actions (no bullets) ─────────────────────────────────────── */
 .tm-actions { display: flex; align-items: center; gap: 4px; list-style: none; margin: 0; padding: 0; }
@@ -247,6 +280,8 @@
 	overflow-y: auto;
 }
 .tm-dd.open .tm-dd-menu { display: block; }
+/* Flipped by JS (initDropdowns) when there isn't room to open downward. */
+.tm-dd.tm-dd-flip-up .tm-dd-menu { top: auto; bottom: calc(100% + 6px); }
 .tm-dd-option {
 	display: block;
 	padding: 9px 12px;
@@ -306,19 +341,41 @@
 .dataTables_wrapper.container-fluid { padding-left: 0 !important; padding-right: 0 !important; }
 
 /* wide tables: fixed height, scroll both ways, sticky header */
-.tm-dt-scroll { max-height: 62vh; overflow: auto; width: 100%; }
-.tm-dt-scroll .tm-table thead th {
+.tm-dt-scroll { max-height: 62vh; overflow: auto; width: 100%; cursor: grab; scrollbar-width: thin; scrollbar-color: transparent transparent; }
+.tm-dt-scroll.tm-dt-scroll-grabbing { cursor: grabbing; user-select: none; }
+/* Scrollbar fades in only while actively scrolling/dragging, fades back out
+   when idle (enableDragScroll/scroll handler toggles this class). */
+.tm-dt-scroll.tm-dt-scroll-active { scrollbar-color: rgba(51, 51, 51, 0.3) transparent; }
+.tm-dt-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+.tm-dt-scroll::-webkit-scrollbar-track { background: transparent; }
+.tm-dt-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 8px; transition: background 0.3s ease; }
+.tm-dt-scroll.tm-dt-scroll-active::-webkit-scrollbar-thumb { background: rgba(51, 51, 51, 0.3); }
+/* DataTables' own CSS sets position:relative on .sorting/.sorting_asc/
+   .sorting_desc header cells at the exact same specificity as a plain
+   "thead th" selector, and loads after theme.css, so it wins ties and
+   silently cancels position:sticky below unless matched directly. */
+.tm-dt-scroll .tm-table thead th,
+.tm-dt-scroll .tm-table thead th.sorting,
+.tm-dt-scroll .tm-table thead th.sorting_asc,
+.tm-dt-scroll .tm-table thead th.sorting_desc {
 	position: sticky;
 	top: 0;
 	z-index: 3;
-	background: var(--tm-card);
+	background: #eef3f9;
 }
 
-/* top: search only */
-.tm-dt-head { margin-bottom: 14px; }
-.dataTables_wrapper .tm-dt-head .dataTables_filter { float: none; text-align: left; margin: 0; }
+/* top: search, plus optional server-side filters (tmInitDataTable's
+   opts.filtersHtml) appended alongside it in the same row */
+.tm-dt-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.dataTables_wrapper .tm-dt-head .dataTables_filter { float: none; text-align: left; margin: 0; flex: 999 1 220px; min-width: 0; }
 .dataTables_wrapper .tm-dt-head .dataTables_filter label { margin: 0; width: 100%; }
 .dataTables_wrapper .tm-dt-head .dataTables_filter input { width: 340px; max-width: 100%; margin: 0; }
+.tm-dt-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tm-dt-filters .tm-dd-toggle { min-width: 0; padding: 7px 14px; font-size: 12.5px; border-radius: 20px; gap: 6px; }
+.tm-dt-filters .tm-dd-label { font-weight: 600; }
+.tm-dt-filters .tm-dd-label b { color: var(--tm-primary); font-weight: 700; }
+.tm-dt-filters .tm-dt-clear { font-size: 12px; font-weight: 700; color: var(--tm-muted); white-space: nowrap; }
+.tm-dt-filters .tm-dt-clear:hover { color: var(--tm-primary); }
 
 /* bottom: info + rows-per-page on the left, pagination on the right */
 .tm-dt-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 20px; margin-top: 14px; }
@@ -330,21 +387,16 @@
 
 /* custom "Rows per page" number input (with suggestions via <datalist>) */
 .tm-perpage { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--tm-muted); }
-.tm-perpage-input {
-	width: 66px;
-	border: 1px solid rgba(51, 51, 51, 0.2);
-	border-radius: 8px;
-	padding: 5px 8px;
-	font-size: 12px;
-	color: #333;
-	background: #fff;
-	font-family: var(--tm-font);
-}
-.tm-perpage-input:focus {
-	outline: none;
-	border-color: var(--tm-primary);
-	box-shadow: 0 0 0 3px rgba(66, 122, 181, 0.12);
-}
+/* Compact size variant of .tm-dd, for the "Rows per page" selector */
+.tm-dd-perpage .tm-dd-toggle { min-width: 64px; padding: 5px 8px; font-size: 12px; gap: 6px; border-radius: 8px; }
+.tm-dd-perpage .tm-dd-menu { min-width: 64px; padding: 4px; }
+.tm-dd-perpage .tm-dd-option { padding: 6px 10px; font-size: 12px; }
+/* Smaller still — just a page number — for the "Page [N] of M" jump-to-page selector */
+.tm-dd-pagejump { vertical-align: middle; }
+.tm-dd-pagejump .tm-dd-toggle { min-width: 40px; padding: 4px 6px; font-size: 11px; gap: 4px; border-radius: 6px; }
+.tm-dd-pagejump .tm-dd-caret { width: 12px; height: 12px; }
+.tm-dd-pagejump .tm-dd-menu { min-width: 48px; padding: 4px; }
+.tm-dd-pagejump .tm-dd-option { padding: 5px 8px; font-size: 11px; text-align: center; }
 
 .dataTables_wrapper .dataTables_length select,
 .dataTables_wrapper .dataTables_filter input {
@@ -361,39 +413,54 @@
 	border-color: var(--tm-primary);
 	box-shadow: 0 0 0 3px rgba(66, 122, 181, 0.12);
 }
-/* Flat, compact pagination matching treasury's .page-btn look */
-.dataTables_wrapper .dataTables_paginate { display: inline-flex; align-items: center; }
+/* Bordered pill Previous/Next buttons (pagingType: 'simple' — there are
+   never numbered buttons or an ellipsis to style here).
+   The <li class="paginate_button"> is reset to an invisible wrapper; the
+   pill itself is styled on the <a class="page-link"> inside it, since
+   that's what Bootstrap's own pagination.css styles by default (padding,
+   border, gray fill) — styling only the <li> left that default box
+   showing through as a second, inner box. */
+.dataTables_wrapper .dataTables_paginate { display: inline-flex; align-items: center; gap: 8px; }
 .dataTables_wrapper .dataTables_paginate .paginate_button {
-	min-width: 24px !important;
-	padding: 4px 5px !important;
-	margin: 0 1px !important;
+	min-width: 0 !important;
+	padding: 0 !important;
+	margin: 0 !important;
 	border: none !important;
 	background: none !important;
-	border-radius: 4px !important;
-	font-size: 11px !important;
-	font-weight: 500 !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+.dataTables_wrapper .dataTables_paginate .page-link {
+	display: inline-flex !important;
+	align-items: center !important;
+	padding: 5px 12px !important;
+	margin: 0 !important;
+	border: 1px solid rgba(51, 51, 51, 0.2) !important;
+	background: #fff !important;
+	border-radius: 8px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
 	line-height: 1 !important;
 	color: #333 !important;
 	box-shadow: none !important;
+	text-decoration: none !important;
 }
-.dataTables_wrapper .dataTables_paginate .paginate_button.current,
-.dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
-	background: var(--tm-primary) !important;
-	color: #fff !important;
-	border: none !important;
-}
-.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-	background: rgba(66, 122, 181, 0.10) !important;
+.dataTables_wrapper .dataTables_paginate .page-link:hover {
+	border-color: var(--tm-primary) !important;
 	color: var(--tm-primary) !important;
-	border: none !important;
+	background: #fff !important;
 }
-.dataTables_wrapper .dataTables_paginate .paginate_button.disabled,
-.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled .page-link,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled .page-link:hover {
 	color: rgba(51, 51, 51, 0.35) !important;
-	background: none !important;
-	border: none !important;
+	background: #fff !important;
+	border-color: rgba(51, 51, 51, 0.12) !important;
+	cursor: default;
 }
-.dataTables_wrapper .dataTables_paginate .ellipsis { padding: 0 4px !important; color: var(--tm-muted); }
+/* .paginate_button lis stretch to the tallest item in this flex row and
+   center their text via the <a>'s own padding; this bare span has no such
+   padding, so it needs its own flex centering or its text sits flush top. */
+.tm-dt-pageinfo { display: inline-flex; align-items: center; gap: 6px; margin: 0 8px; font-size: 11px; font-weight: 600; color: var(--tm-muted); white-space: nowrap; }
 
 /* ── Global-search modal — self-sufficient treasury styling ──────────────────
    Lives in the template (shows on every page). On pages that don't load Cork's

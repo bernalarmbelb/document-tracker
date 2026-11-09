@@ -29,6 +29,8 @@ class ResolutionsController extends Controller
     public $edit = FALSE;
     public $messages = array();
     public $selected_status = "ALL";
+    public $selected_author = "ALL";
+    public $selected_year = "ALL";
 
 
     public function __construct()
@@ -36,11 +38,13 @@ class ResolutionsController extends Controller
         $this->middleware(function ($request, $next)
         {
             if (session()->has('resolutions_selected_status')) $this->selected_status = session('resolutions_selected_status');
+            if (session()->has('resolutions_selected_author')) $this->selected_author = session('resolutions_selected_author');
+            if (session()->has('resolutions_selected_year')) $this->selected_year = session('resolutions_selected_year');
 
             return $next($request);
         });
 
-        $this->middleware('permission:View Resolutions')->only(['list', 'list_filter', 'view', 'generate_pdf', 'view_pdf', 'print_list', 'get_uploaded_files']);
+        $this->middleware('permission:View Resolutions')->only(['list', 'list_filter', 'list_filter_clear', 'view', 'generate_pdf', 'view_pdf', 'print_list', 'get_uploaded_files']);
         $this->middleware('permission:Add Resolution')->only(['add', 'save_add', 'upload_supporting_documents', 'upload_supporting_documents_single']);
         $this->middleware('permission:Edit Resolution')->only(['edit', 'save_changes']);
         $this->middleware('permission:Archive Resolution')->only(['delete', 'move_to_archive']);
@@ -52,16 +56,28 @@ class ResolutionsController extends Controller
         log_activity('View Resolutions List');
         $myid = Auth::user()->id;         
 
-        $query = Resolutions::where("is_deleted", 0)->where("is_archived", 0); 
+        $query = Resolutions::where("is_deleted", 0)->where("is_archived", 0);
         if($this->selected_status!='ALL') $query = $query->where('resolution_status', $this->selected_status);
+        if($this->selected_author!='ALL') $query = $query->where('author_name', $this->selected_author);
+        if($this->selected_year!='ALL') $query = $query->whereYear('date_created', $this->selected_year);
 
         $records = $query->get();
-        
+
+        $all_authors = Resolutions::where("is_deleted", 0)->where("is_archived", 0)
+            ->whereNotNull('author_name')->where('author_name', '!=', '')
+            ->distinct()->orderBy('author_name')->pluck('author_name');
+        $all_years = Resolutions::where("is_deleted", 0)->where("is_archived", 0)
+            ->selectRaw('DISTINCT YEAR(date_created) as y')->orderByDesc('y')->pluck('y');
+
         $data = array(
             'menu' => 'Resolutions',
-            'records' => $records,       
-            'all_statuses' => StatusResolutions::where("is_deleted", 0)->orderBy('order_level')->get(),    
-            'selected_status' => $this->selected_status,                         
+            'records' => $records,
+            'all_statuses' => StatusResolutions::where("is_deleted", 0)->orderBy('order_level')->get(),
+            'selected_status' => $this->selected_status,
+            'all_authors' => $all_authors,
+            'selected_author' => $this->selected_author,
+            'all_years' => $all_years,
+            'selected_year' => $this->selected_year,
         );
 
         return view("resolutions.list", $data);
@@ -69,12 +85,22 @@ class ResolutionsController extends Controller
 
     public function list_filter(Request $request)
     {
-        $data = $request->all();      
+        $data = $request->all();
         $this->selected_status = $data['resolution_status'];
-       
-        session(['resolutions_selected_status' => $this->selected_status]);        
+        $this->selected_author = $data['author'] ?? 'ALL';
+        $this->selected_year = $data['year'] ?? 'ALL';
+
+        session(['resolutions_selected_status' => $this->selected_status]);
+        session(['resolutions_selected_author' => $this->selected_author]);
+        session(['resolutions_selected_year' => $this->selected_year]);
     
         return $this->list();
+    }
+
+    public function list_filter_clear()
+    {
+        session()->forget(['resolutions_selected_status', 'resolutions_selected_author', 'resolutions_selected_year']);
+        return redirect()->route('resolutions.list');
     }
 
     public function add()
@@ -528,9 +554,11 @@ class ResolutionsController extends Controller
 
         $currentrow=6;             
             
-        $query = Resolutions::where("is_deleted", 0)->where("is_archived", 0); 
+        $query = Resolutions::where("is_deleted", 0)->where("is_archived", 0);
         if($this->selected_status!='ALL') $query = $query->where('resolution_status', $this->selected_status);
-        $all_records = $query->orderBy('series_number', 'asc')->get();   
+        if($this->selected_author!='ALL') $query = $query->where('author_name', $this->selected_author);
+        if($this->selected_year!='ALL') $query = $query->whereYear('date_created', $this->selected_year);
+        $all_records = $query->orderBy('series_number', 'asc')->get();
 
         foreach($all_records as $item)    
         {                            

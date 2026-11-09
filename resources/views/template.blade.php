@@ -53,13 +53,23 @@
             </a>
 
             <div class="nav-profile">
-                <div class="nav-user">
-                    <div class="nav-user-info">
-                        <span class="nav-user-name">{{ strtoupper(Auth::user()->username) }}</span>
-                        <span class="nav-user-role">{{ ucwords(Auth::user()->account_type) }}</span>
-                    </div>
-                    <span class="nav-user-divider" aria-hidden="true"></span>
-                    <a href="{{ url("/logout") }}" class="nav-logout-btn">Logout</a>
+                @php
+                    $fullname = trim(Auth::user()->fullname ?? '');
+                    $nameParts = $fullname !== '' ? preg_split('/\s+/', $fullname) : [Auth::user()->username];
+                    $initials = strtoupper(substr($nameParts[0] ?? '', 0, 1) . substr($nameParts[1] ?? '', 0, 1));
+                @endphp
+                <div class="nav-dropdown nav-user-dropdown">
+                    <a href="javascript:void(0);" class="nav-user-toggle dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                        <span class="nav-user-avatar">{{ $initials }}</span>
+                        <span class="nav-user-info">
+                            <span class="nav-user-name">{{ strtoupper(Auth::user()->username) }}</span>
+                            <span class="nav-user-role">{{ ucwords(Auth::user()->account_type) }}</span>
+                        </span>
+                        <svg class="nav-user-caret" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end tm-navmenu">
+                        <li><a class="dropdown-item" href="{{ url('/logout') }}">Logout</a></li>
+                    </ul>
                 </div>
             </div>
         </nav>
@@ -274,12 +284,6 @@
                 </div>
             </div>
             @endauth
-
-            <div class="footer-wrapper" style="font-family:'Manrope',sans-serif;color:var(--tm-muted,#7A7777);font-size:12px;border-top:1px solid rgba(51,51,51,.08);margin-top:8px">
-                <div class="footer-section f-section-1">
-                    <p class="mb-0">© <span class="dynamic-year">{{ date('Y') }}</span> <a target="_blank" href="#" style="color:var(--tm-primary,#427AB5);text-decoration:none;font-weight:600">Municipality of Prieto Diaz</a> — Document Tracker System. All rights reserved.</p>
-                </div>
-            </div>
 
             {{-- Quick-Create bar --}}
             @auth

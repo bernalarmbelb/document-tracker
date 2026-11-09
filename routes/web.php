@@ -32,6 +32,7 @@ Route::middleware('auth')->group(function () {
     //RESOLUTIONS
     Route::get('/resolutions/list', [ResolutionsController::class, 'list'])->name("resolutions.list");
     Route::post('/resolutions/list_filter', [ResolutionsController::class, 'list_filter'])->name("resolutions.list_filter");
+    Route::get('/resolutions/list_filter_clear', [ResolutionsController::class, 'list_filter_clear'])->name("resolutions.list_filter_clear");
     Route::get('/resolutions/add', [ResolutionsController::class, 'add'])->name("resolutions.add");
     Route::get('/resolutions/edit/{id}', [ResolutionsController::class, 'edit'])->name("resolutions.edit");
     Route::get('/resolutions/view/{id}', [ResolutionsController::class, 'view'])->name("resolutions.view");

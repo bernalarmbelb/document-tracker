@@ -69,7 +69,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="tm-label">Keywords/Tags <span class="text-danger">*</span></label>
-                            <input type="text" class="tm-input" value="{{ $edit ? $info->keywords_tags : '' }}" required name="keywords_tags" >
+                            <input type="text" class="tm-input" value="{{ $edit ? $info->keywords_tags : '' }}" required name="keywords_tags" placeholder="Separate multiple keywords with commas, e.g. tax, budget, infrastructure">
                         </div>
                         <div class="col-md-6">
                             <label class="tm-label">Sponsor <span class="text-danger">*</span></label>

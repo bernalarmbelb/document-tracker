@@ -83,8 +83,22 @@
 
             toggle.addEventListener('click', function (e) {
                 e.stopPropagation();
-                document.querySelectorAll('[data-tm-dropdown].open').forEach(function (o) { if (o !== dd) o.classList.remove('open'); });
+                document.querySelectorAll('[data-tm-dropdown].open').forEach(function (o) { if (o !== dd) { o.classList.remove('open'); o.classList.remove('tm-dd-flip-up'); } });
+                var opening = !dd.classList.contains('open');
                 dd.classList.toggle('open');
+                if (opening) {
+                    // Menu is display:block now that .open is set, so its real
+                    // height is measurable — flip upward if it would otherwise
+                    // run off the bottom of the viewport and there's more room above.
+                    dd.classList.remove('tm-dd-flip-up');
+                    var toggleRect = toggle.getBoundingClientRect();
+                    var menuHeight = menu.offsetHeight;
+                    var spaceBelow = window.innerHeight - toggleRect.bottom;
+                    var spaceAbove = toggleRect.top;
+                    if (spaceBelow < menuHeight + 12 && spaceAbove > spaceBelow) {
+                        dd.classList.add('tm-dd-flip-up');
+                    }
+                }
             });
 
             menu.querySelectorAll('.tm-dd-option').forEach(function (opt) {
@@ -194,19 +208,201 @@
         initDropdowns(); enhanceSelects();
     }
 
+    /* "Previous · Page [N ▾] of M · Next" — replaces DataTables' numbered
+       page buttons. The page number itself is a .tm-dd jump-to-page dropdown
+       (reusing the same component as the rows-per-page selector), not plain
+       text. Call after creating a table whose dom includes 'p'; pairs with
+       pagingType: 'simple' so there are exactly two buttons (previous/next)
+       to inject this between.
+       DataTables rebuilds the whole <ul class="pagination"> from scratch on
+       every draw, which wipes out anything manually inserted into it — so
+       this is rebuilt on every draw, not just once. Rebuilding (rather than
+       patching in place) also handles the option list changing size when a
+       search or rows-per-page change alters the total page count. */
+    function addPageInfo(table, wrapper) {
+        function render() {
+            var pag = wrapper.find('.dataTables_paginate');
+            pag.find('.tm-dt-pageinfo').remove();
+
+            var p = table.page.info();
+            var totalPages = p.pages || 1;
+            var currentPage = p.page + 1;
+
+            var optsHtml = '';
+            for (var i = 1; i <= totalPages; i++) {
+                optsHtml += '<a class="tm-dd-option' + (i === currentPage ? ' active' : '') + '" data-value="' + i + '">' + i + '</a>';
+            }
+
+            var info = $(
+                '<span class="tm-dt-pageinfo">Page ' +
+                    '<span class="tm-dd tm-dd-pagejump" data-tm-dropdown>' +
+                        '<button type="button" class="tm-dd-toggle"><span class="tm-dd-label">' + currentPage + '</span>' + CARET + '</button>' +
+                        '<div class="tm-dd-menu">' + optsHtml + '</div>' +
+                        '<input type="hidden" value="' + currentPage + '">' +
+                    '</span>' +
+                    ' of ' + totalPages +
+                '</span>'
+            );
+            pag.find('.paginate_button.previous').first().after(info);
+
+            initDropdowns(info[0]);
+            info.find('.tm-dd-option').on('click', function () {
+                table.page(parseInt($(this).attr('data-value'), 10) - 1).draw('page');
+            });
+        }
+        table.on('draw.dt', render);
+        render();
+    }
+    window.tmAddPageInfo = addPageInfo;
+
+    /* Size the table's scroll area to fill whatever room is actually left on
+       screen (down to the fixed Quick-Create bar, which itself collapses/
+       expands), instead of a guessed fixed vh. There's already pagination
+       and an internal scrollbar, so there's no reason to cap it short. */
+    function fitTableHeight(scrollEl) {
+        if (!scrollEl) return;
+
+        // #container carries Cork's old min-height:100vh (meant for when it
+        // started at the very top of the viewport). Our header now flows
+        // above it instead of overlaying it, so that min-height always
+        // overshoots the viewport by the header's own height — and body's
+        // separate padding-bottom (reserved for the Quick-Create bar on
+        // pages that DON'T size themselves) does the same again. Both are
+        // redundant here since this function already fits exactly around
+        // both the header and the quickbar; left in place they just make
+        // the whole page scroll to reveal dead space below the table.
+        var container = document.getElementById('container');
+        if (container) container.style.minHeight = '0';
+        document.body.style.paddingBottom = '0';
+        var quickbar = document.getElementById('tmQuickbar');
+        var footEl = scrollEl.parentElement ? scrollEl.parentElement.querySelector('.tm-dt-foot') : null;
+        function fit() {
+            var top = scrollEl.getBoundingClientRect().top;
+            var quickbarHeight = quickbar ? quickbar.getBoundingClientRect().height : 0;
+            var footHeight = footEl ? footEl.getBoundingClientRect().height : 0;
+            var available = window.innerHeight - top - quickbarHeight - footHeight - 40;
+            scrollEl.style.maxHeight = Math.max(240, available) + 'px';
+        }
+        fit();
+        window.addEventListener('resize', fit);
+        var toggle = document.getElementById('tmQuickbarToggle');
+        if (toggle) toggle.addEventListener('click', function () { setTimeout(fit, 0); });
+    }
+    window.tmFitTableHeight = fitTableHeight;
+
+    /* Click-and-hold-to-pan scrolling for the wide table's scroll box, as an
+       alternative to the thin native scrollbar. Clicks on links/buttons/row
+       actions inside the table still work normally; only a genuine drag
+       (moved more than a few px) is treated as a pan and has its resulting
+       click suppressed, so it doesn't also trigger the row-click menu/nav
+       those pages wire up separately. */
+    function enableDragScroll(el) {
+        if (!el || el.__tmDragInit) return;
+        el.__tmDragInit = true;
+
+        var dragging = false, moved = false, startX, startY, startLeft, startTop;
+
+        el.addEventListener('mousedown', function (e) {
+            if (e.button !== 0 || e.target.closest('a, button, input, select, textarea, .tm-dd')) return;
+            dragging = true;
+            moved = false;
+            el.classList.add('tm-dt-scroll-grabbing');
+            startX = e.pageX;
+            startY = e.pageY;
+            startLeft = el.scrollLeft;
+            startTop = el.scrollTop;
+        });
+        document.addEventListener('mousemove', function (e) {
+            if (!dragging) return;
+            var dx = e.pageX - startX, dy = e.pageY - startY;
+            if (!moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) moved = true;
+            if (moved) {
+                e.preventDefault();
+                el.scrollLeft = startLeft - dx;
+                el.scrollTop = startTop - dy;
+            }
+        });
+        document.addEventListener('mouseup', function () {
+            dragging = false;
+            el.classList.remove('tm-dt-scroll-grabbing');
+        });
+        // Capture phase so a drag's trailing click never reaches the
+        // delegated row-click handlers bound on tbody.
+        el.addEventListener('click', function (e) {
+            if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; }
+        }, true);
+    }
+    window.tmEnableDragScroll = enableDragScroll;
+
+    /* Scrollbar fades in while the table is actually being scrolled (wheel,
+       drag, native scrollbar, keyboard) and fades back out ~0.8s after it
+       stops — pairs with the scrollbar-color/::-webkit-scrollbar-thumb rules
+       in theme.css that only paint the thumb while .tm-dt-scroll-active. */
+    function enableScrollbarFade(el) {
+        if (!el || el.__tmFadeInit) return;
+        el.__tmFadeInit = true;
+        var hideTimer;
+        el.addEventListener('scroll', function () {
+            el.classList.add('tm-dt-scroll-active');
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(function () { el.classList.remove('tm-dt-scroll-active'); }, 800);
+        });
+    }
+    window.tmEnableScrollbarFade = enableScrollbarFade;
+
+    /* "Rows per page" selector — a compact .tm-dd dropdown (10/25/50/100,
+       plus the table's own starting length if it isn't one of those) instead
+       of a bare number input. Reuses initDropdowns() for open/close + label
+       sync, then layers on the one bit it doesn't know about: changing the
+       table's page length. */
+    var PP_OPTIONS = [10, 25, 50, 100];
+    function buildRowsPerPage(table, footLeft, currentLength) {
+        var options = PP_OPTIONS.slice();
+        if (options.indexOf(currentLength) === -1) {
+            options.push(currentLength);
+            options.sort(function (a, b) { return a - b; });
+        }
+
+        var id = 'tm-pp-' + (++seq);
+        var optsHtml = options.map(function (n) {
+            return '<a class="tm-dd-option' + (n === currentLength ? ' active' : '') + '" data-value="' + n + '">' + n + '</a>';
+        }).join('');
+
+        var wrap = $(
+            '<div class="tm-perpage">' +
+                '<span id="' + id + '-label">Rows per page</span>' +
+                '<div class="tm-dd tm-dd-perpage" data-tm-dropdown aria-labelledby="' + id + '-label">' +
+                    '<button type="button" class="tm-dd-toggle"><span class="tm-dd-label">' + currentLength + '</span>' + CARET + '</button>' +
+                    '<div class="tm-dd-menu">' + optsHtml + '</div>' +
+                    '<input type="hidden" value="' + currentLength + '">' +
+                '</div>' +
+            '</div>'
+        );
+        footLeft.append(wrap);
+
+        initDropdowns(wrap[0]);
+        wrap.find('.tm-dd-option').on('click', function () {
+            table.page.len(parseInt($(this).attr('data-value'), 10)).draw();
+        });
+    }
+    window.tmBuildRowsPerPage = buildRowsPerPage;
+
     window.tmInitDataTable = function (selector, opts) {
         opts = opts || {};
         registerSeriesSortType();
 
         var placeholder = opts.searchPlaceholder || 'Search...';
         var pageLength = opts.pageLength || 10;
+        var filtersHtml = opts.filtersHtml;
 
         // Options we consume here, not valid DataTables keys.
         delete opts.searchPlaceholder;
+        delete opts.filtersHtml;
 
         var config = $.extend(true, {
             pageLength: pageLength,
-            dom: "<'tm-dt-head'f><'tm-dt-scroll't>r<'tm-dt-foot'<'tm-dt-foot-left'i><'tm-dt-foot-right'p>>",
+            pagingType: 'simple',
+            dom: "<'tm-dt-head'f><'tm-dt-tablebox'<'tm-dt-scroll't>r<'tm-dt-foot'<'tm-dt-foot-left'i><'tm-dt-foot-right'p>>>",
             language: {
                 search: '',
                 searchPlaceholder: placeholder,
@@ -218,32 +414,16 @@
         }, opts);
 
         var table = $(selector).DataTable(config);
-
-        // Build the custom "Rows per page" number input with suggestions.
-        var id = 'tm-pp-' + (++seq);
         var wrapper = $(selector).closest('.dataTables_wrapper');
-        var footLeft = wrapper.find('.tm-dt-foot-left');
-        var per = $(
-            '<div class="tm-perpage">' +
-                '<label for="' + id + '">Rows per page</label>' +
-                '<input id="' + id + '" class="tm-perpage-input" type="number" min="1" step="5" value="' + config.pageLength + '" list="' + id + '-list">' +
-                '<datalist id="' + id + '-list">' +
-                    '<option value="10"></option><option value="15"></option><option value="25"></option>' +
-                    '<option value="50"></option><option value="100"></option>' +
-                '</datalist>' +
-            '</div>'
-        );
-        footLeft.append(per);
-
-        function apply() {
-            var v = parseInt(per.find('.tm-perpage-input').val(), 10);
-            if (!v || v < 1) { v = config.pageLength; per.find('.tm-perpage-input').val(v); }
-            table.page.len(v).draw();
+        if (filtersHtml) {
+            var filtersEl = $(filtersHtml).appendTo(wrapper.find('.tm-dt-head'));
+            initDropdowns(filtersEl[0]);
         }
-        per.find('.tm-perpage-input').on('change', apply);
-        per.find('.tm-perpage-input').on('keydown', function (e) {
-            if (e.key === 'Enter') { e.preventDefault(); apply(); }
-        });
+        addPageInfo(table, wrapper);
+        buildRowsPerPage(table, wrapper.find('.tm-dt-foot-left'), config.pageLength);
+        fitTableHeight(wrapper.find('.tm-dt-scroll')[0]);
+        enableDragScroll(wrapper.find('.tm-dt-scroll')[0]);
+        enableScrollbarFade(wrapper.find('.tm-dt-scroll')[0]);
 
         return table;
     };

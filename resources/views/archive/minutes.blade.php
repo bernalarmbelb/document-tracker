@@ -16,7 +16,7 @@
 
         @include('archive.partials.tabs', ['active' => 'minutes'])
 
-        <div class="tm-card">
+        <div class="tm-table-card">
             <table id="zero-config" class="tm-table" style="width:100%">
                 <thead>
                     <tr><th>Series No.</th><th>Date Created</th><th>Category</th><th>Short Description</th><th>Presiding Officer</th><th>Barangay</th><th>Venue</th><th class="no-content">Actions</th></tr>
